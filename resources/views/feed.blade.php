@@ -31,7 +31,16 @@
           <div class="card post-card shadow-sm mb-3">
             <div class="row g-0">
               <div class="col-md-6">
-                <img src="{{ $report->image_url ?? 'https://via.placeholder.com/400x300?text=No+Image' }}" class="post-image" alt="{{ $report->violation_type_display }}">
+                @if($report->image_url)
+                  <img src="{{ $report->image_url }}" class="post-image" alt="{{ $report->violation_type_display }}">
+                @else
+                  <div class="post-image d-flex align-items-center justify-content-center bg-light">
+                    <div class="text-center text-muted">
+                      <i class="bi bi-image" style="font-size: 48px;"></i>
+                      <p class="mt-2 mb-0">No Image</p>
+                    </div>
+                  </div>
+                @endif
               </div>
               <div class="col-md-6">
                 <div class="card-body d-flex flex-column h-100">

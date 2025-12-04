@@ -8,7 +8,7 @@
 
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{{ asset('css/app.css') }}">
 
   @stack('styles')
@@ -32,9 +32,9 @@
               </li>
             @endforeach
           @else
-            <li class="nav-item"><a class="nav-link text-dark" href="{{ route('index') }}">Home</a></li>
-            <li class="nav-item"><a class="nav-link text-dark" href="{{ route('about') }}">About</a></li>
-            <li class="nav-item"><a class="nav-link text-dark" href="{{ route('feed') }}">Feed</a></li>
+            <li class="nav-item"><a class="nav-link text-dark {{ request()->routeIs('index') ? 'active' : '' }}" href="{{ route('index') }}">Home</a></li>
+            <li class="nav-item"><a class="nav-link text-dark {{ request()->routeIs('about') ? 'active' : '' }}" href="{{ route('about') }}">About</a></li>
+            <li class="nav-item"><a class="nav-link text-dark {{ request()->routeIs('feed') ? 'active' : '' }}" href="{{ route('feed') }}">Feed</a></li>
 
             @auth
               <li class="nav-item dropdown">
