@@ -1,0 +1,113 @@
+<!--
+  EXAMPLE: How to use the Vanilla JavaScript ReportMap
+  This file shows how to integrate the report map into your Blade templates
+-->
+
+<!-- Add Leaflet CSS and JS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<!-- Add the ReportMap JavaScript -->
+<script src="{{ asset('js/report-map.js') }}"></script>
+
+<!-- Map Controls -->
+<div class="map-controls mb-3">
+    <div class="row g-2">
+        <div class="col-md-3">
+            <select id="filter-type" class="form-select form-select-sm">
+                <option value="">All Types</option>
+                <option value="illegal-dumping">Illegal Dumping</option>
+                <option value="water-pollution">Water Pollution</option>
+                <option value="air-pollution">Air Pollution</option>
+                <option value="deforestation">Deforestation</option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <select id="filter-status" class="form-select form-select-sm">
+                <option value="">All Status</option>
+                <option value="pending">Pending</option>
+                <option value="in-review">In Review</option>
+                <option value="resolved">Resolved</option>
+            </select>
+        </div>
+        <div class="col-md-6 text-end">
+            <button id="btn-get-location" class="btn btn-sm btn-outline-primary me-2">
+                <i class="bi bi-crosshair me-1"></i>My Location
+            </button>
+            <button id="btn-toggle-cluster" class="btn btn-sm btn-outline-success">
+                <i class="bi bi-grid-3x3 me-1"></i>Enable Clustering
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Map Container -->
+<div id="map"></div>
+
+<!-- Map Legend -->
+<div class="map-legend mt-3">
+    <small class="text-muted">
+        <span class="me-3"><i class="bi bi-circle-fill text-warning"></i> Pending</span>
+        <span class="me-3"><i class="bi bi-circle-fill text-info"></i> In Review</span>
+        <span class="me-3"><i class="bi bi-circle-fill text-success"></i> Resolved</span>
+        <span>Total: <span id="report-count">0</span> reports</span>
+    </small>
+</div>
+
+<style>
+    .map-legend {
+        padding: 10px;
+        background: #f8f9fa;
+        border-radius: 6px;
+    }
+</style>
+
+<script>
+    // Initialize the map when the page loads
+    document.addEventListener('DOMContentLoaded', function() {
+        // Example reports data - in a real application, this would come from your backend
+        const reports = [
+            {
+                report_id: 'RPT-001',
+                latitude: 7.1907,
+                longitude: 125.4553,
+                violation_type: 'illegal-dumping',
+                violation_type_display: 'Illegal Dumping',
+                status: 'pending',
+                status_display: 'Pending',
+                location: 'Davao City'
+            },
+            {
+                report_id: 'RPT-002',
+                latitude: 7.2,
+                longitude: 125.46,
+                violation_type: 'water-pollution',
+                violation_type_display: 'Water Pollution',
+                status: 'in-review',
+                status_display: 'In Review',
+                location: 'Toril, Davao City'
+            }
+            // Add more reports as needed
+        ];
+
+        // Initialize the map
+        const reportMap = new ReportMap({
+            mapContainer: 'map',
+            center: [7.1907, 125.4553],  // Davao City coordinates
+            zoom: 13,
+            reports: reports,
+            mapHeight: '500px'
+        });
+
+        // Listen for report view events
+        window.addEventListener('view-report', function(event) {
+            console.log('View report:', event.detail);
+            // Handle viewing the report (e.g., show modal, redirect, etc.)
+        });
+
+        // Example: Update reports dynamically
+        // setTimeout(() => {
+        //     reportMap.setReports(newReports);
+        // }, 5000);
+    });
+</script>

@@ -1,0 +1,296 @@
+/* Global Styles */
+body {
+  font-family: 'Inter', sans-serif;
+}
+
+/* Navbar */
+.navbar {
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  transition: box-shadow 0.2s;
+  z-index: 1030;
+  background: #fff !important;
+  font-size: 18px;
+}
+
+.navbar.scrolled {
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.navbar-brand {
+  font-weight: 700;
+    font-size: 22px;
+
+}
+
+.text-success {
+  color: #2e8b57 !important;
+}
+
+.btn-success {
+  background: #2e8b57;
+  border: none;
+}
+
+.btn-success:hover {
+  background: #256d47;
+}
+
+/* Form Styles */
+.form-label {
+  font-weight: 600;
+}
+
+.input-group-text {
+  background: #f4f6f8;
+}
+
+/* Auth Pages */
+html, body {
+  height: 100%;
+}
+
+body.auth-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: #f4f6f8;
+}
+
+body.auth-page main.container {
+  flex: 1 0 auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding-top: 90px;
+  padding-bottom: 24px;
+  min-height: 0;
+}
+
+body.auth-page footer {
+  flex-shrink: 0;
+  width: 100%;
+}
+
+.login-card,
+.register-card {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  padding: 32px 24px;
+  max-width: 400px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+@media (max-width: 575.98px) {
+  .login-card,
+  .register-card {
+    padding: 18px 6px;
+  }
+
+  body.auth-page main.container {
+    padding-top: 80px;
+  }
+}
+
+/* Dashboard Styles */
+body.dashboard-page {
+  background-color: #f8f9fa;
+}
+
+.dashboard-content {
+  margin-top: 76px;
+  min-height: calc(100vh - 200px);
+}
+
+.stat-card {
+  border-left: 4px solid;
+}
+
+.stat-card.pending {
+  border-left-color: #ffc107;
+}
+
+.stat-card.in-review,
+.stat-card.in-progress {
+  border-left-color: #0dcaf0;
+}
+
+.stat-card.resolved,
+.stat-card.fixed {
+  border-left-color: #fd7e14;
+}
+
+.stat-card.confirmed {
+  border-left-color: #198754;
+}
+
+.stat-card.total {
+  border-left-color: #6c757d;
+}
+
+.stat-card.verified {
+  border-left-color: #0d6efd;
+}
+
+.table-actions .btn {
+  padding: 0.25rem 0.75rem;
+  font-size: 0.875rem;
+}
+
+/* Report Form Styles */
+body.report-page {
+  background: #f4f6f8;
+}
+
+.form-card {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  padding: 32px 24px;
+  max-width: 600px;
+  margin: 48px auto;
+}
+
+.btn-submit {
+  background: #2e8b57;
+  color: #fff;
+  border: none;
+  transition: background 0.2s;
+}
+
+.btn-submit:hover {
+  background: #256d47;
+}
+
+#map {
+  height: 250px;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+}
+
+.upload-box {
+  border: 2px dashed #ccc;
+  border-radius: 10px;
+  padding: 40px 20px;
+  text-align: center;
+  color: #777;
+  cursor: pointer;
+  transition: border-color 0.3s;
+  background: #fafbfa;
+}
+
+.upload-box:hover {
+  border-color: #2e8b57;
+  color: #2e8b57;
+}
+
+@media (max-width: 767px) {
+  .form-card {
+    padding: 18px 6px;
+    margin: 24px 0;
+  }
+
+  #map {
+    height: 160px;
+  }
+}
+
+/* Report Option Cards */
+.report-option-card {
+  transition: transform 0.2s, box-shadow 0.2s;
+  border: 2px solid transparent;
+}
+
+.report-option-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 16px rgba(0,0,0,0.15) !important;
+  border-color: var(--bs-success);
+}
+
+.feature-icon {
+  width: 50px;
+  height: 50px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+}
+
+/* Feed Page */
+body.feed-page {
+  background: #f4f6f8;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.post-card {
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.post-image {
+  max-height: 320px;
+  object-fit: cover;
+  width: 100%;
+  display: block;
+}
+
+.map-preview {
+  height: 180px;
+  border-radius: 10px;
+}
+
+.category-badge {
+  font-size: 0.78rem;
+}
+
+.status-badge-pending {
+  background: #ffc107;
+  color: #000;
+}
+
+.status-badge-inprogress {
+  background: #0dcaf0;
+  color: #000;
+}
+
+.status-badge-resolved {
+  background: #198754;
+  color: #fff;
+}
+
+footer.bg-dark {
+  margin-top: auto;
+  background: #212529 !important;
+}
+
+/* Modal Styles */
+.modal-header {
+  background-color: #f8f9fa;
+  border-bottom: 2px solid #198754;
+}
+
+.report-image-preview {
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+}
+
+#viewMap {
+  height: 300px;
+  background-color: #e9ecef;
+  border-radius: 8px;
+}
+
+/* Chart Placeholder */
+.chart-placeholder {
+  height: 250px;
+  background: linear-gradient(135deg, #e9ecef 0%, #dee2e6 100%);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
