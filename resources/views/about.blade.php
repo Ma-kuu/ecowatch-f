@@ -41,32 +41,40 @@
           <div class="bg-success bg-opacity-10 p-5 rounded-3">
             <div class="row g-4 text-center">
               <div class="col-6">
-                <div class="mb-2">
-                  <i class="bi bi-shield-check text-success" style="font-size: 48px;"></i>
+                <div class="mission-feature">
+                  <div class="mb-2">
+                    <i class="bi bi-shield-check text-success" style="font-size: 48px;"></i>
+                  </div>
+                  <h4 class="fw-bold mb-1">Secure</h4>
+                  <p class="text-muted small mb-0">End-to-end encryption</p>
                 </div>
-                <h4 class="fw-bold mb-1">Secure</h4>
-                <p class="text-muted small mb-0">End-to-end encryption</p>
               </div>
               <div class="col-6">
-                <div class="mb-2">
-                  <i class="bi bi-eye-slash text-success" style="font-size: 48px;"></i>
+                <div class="mission-feature">
+                  <div class="mb-2">
+                    <i class="bi bi-eye-slash text-success" style="font-size: 48px;"></i>
+                  </div>
+                  <h4 class="fw-bold mb-1">Anonymous</h4>
+                  <p class="text-muted small mb-0">Your identity protected</p>
                 </div>
-                <h4 class="fw-bold mb-1">Anonymous</h4>
-                <p class="text-muted small mb-0">Your identity protected</p>
               </div>
               <div class="col-6">
-                <div class="mb-2">
-                  <i class="bi bi-clock-history text-success" style="font-size: 48px;"></i>
+                <div class="mission-feature">
+                  <div class="mb-2">
+                    <i class="bi bi-clock-history text-success" style="font-size: 48px;"></i>
+                  </div>
+                  <h4 class="fw-bold mb-1">Real-time</h4>
+                  <p class="text-muted small mb-0">Instant notifications</p>
                 </div>
-                <h4 class="fw-bold mb-1">Real-time</h4>
-                <p class="text-muted small mb-0">Instant notifications</p>
               </div>
               <div class="col-6">
-                <div class="mb-2">
-                  <i class="bi bi-graph-up text-success" style="font-size: 48px;"></i>
+                <div class="mission-feature">
+                  <div class="mb-2">
+                    <i class="bi bi-graph-up text-success" style="font-size: 48px;"></i>
+                  </div>
+                  <h4 class="fw-bold mb-1">Impactful</h4>
+                  <p class="text-muted small mb-0">Track your reports</p>
                 </div>
-                <h4 class="fw-bold mb-1">Impactful</h4>
-                <p class="text-muted small mb-0">Track your reports</p>
               </div>
             </div>
           </div>
@@ -124,7 +132,7 @@
       <h2 class="fw-bold text-center mb-5">Why Your Reports Matter</h2>
       <div class="row g-4">
         <div class="col-md-6 col-lg-3">
-          <div class="text-center">
+          <div class="text-center violation-item">
             <div class="bg-success bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width:80px; height:80px;">
               <i class="bi bi-building text-success" style="font-size: 40px;"></i>
             </div>
@@ -133,7 +141,7 @@
           </div>
         </div>
         <div class="col-md-6 col-lg-3">
-          <div class="text-center">
+          <div class="text-center violation-item">
             <div class="bg-success bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width:80px; height:80px;">
               <i class="bi bi-people text-success" style="font-size: 40px;"></i>
             </div>
@@ -142,7 +150,7 @@
           </div>
         </div>
         <div class="col-md-6 col-lg-3">
-          <div class="text-center">
+          <div class="text-center violation-item">
             <div class="bg-success bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width:80px; height:80px;">
               <i class="bi bi-heart-pulse text-success" style="font-size: 40px;"></i>
             </div>
@@ -151,7 +159,7 @@
           </div>
         </div>
         <div class="col-md-6 col-lg-3">
-          <div class="text-center">
+          <div class="text-center violation-item">
             <div class="bg-success bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width:80px; height:80px;">
               <i class="bi bi-globe text-success" style="font-size: 40px;"></i>
             </div>

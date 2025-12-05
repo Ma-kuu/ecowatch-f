@@ -64,7 +64,7 @@
               </li>
             @else
               {{-- Guest users --}}
-              <li class="nav-item"><a class="nav-link text-dark" href="{{ route('login') }}">Log in</a></li>
+              <li class="nav-item"><a class="nav-link text-dark {{ request()->routeIs('login') ? 'active' : '' }}" href="{{ route('login') }}">Log in</a></li>
               <li class="nav-item ms-lg-3">
                 <a class="btn btn-success px-4" href="{{ route('report-form') }}">Report Violation</a>
               </li>

@@ -63,7 +63,7 @@
 
       <div class="row g-4">
         <div class="col-md-6 col-lg-3">
-          <div class="text-center p-3">
+          <div class="text-center p-3 violation-item">
             <div class="feature-icon bg-danger bg-opacity-10 mb-3">
               <i class="bi bi-trash text-danger" style="font-size: 24px;"></i>
             </div>
@@ -73,7 +73,7 @@
         </div>
 
         <div class="col-md-6 col-lg-3">
-          <div class="text-center p-3">
+          <div class="text-center p-3 violation-item">
             <div class="feature-icon bg-info bg-opacity-10 mb-3">
               <i class="bi bi-droplet text-info" style="font-size: 24px;"></i>
             </div>
@@ -83,7 +83,7 @@
         </div>
 
         <div class="col-md-6 col-lg-3">
-          <div class="text-center p-3">
+          <div class="text-center p-3 violation-item">
             <div class="feature-icon bg-secondary bg-opacity-10 mb-3">
               <i class="bi bi-wind text-secondary" style="font-size: 24px;"></i>
             </div>
@@ -93,7 +93,7 @@
         </div>
 
         <div class="col-md-6 col-lg-3">
-          <div class="text-center p-3">
+          <div class="text-center p-3 violation-item">
             <div class="feature-icon bg-success bg-opacity-10 mb-3">
               <i class="bi bi-tree text-success" style="font-size: 24px;"></i>
             </div>
@@ -103,7 +103,7 @@
         </div>
 
         <div class="col-md-6 col-lg-3">
-          <div class="text-center p-3">
+          <div class="text-center p-3 violation-item">
             <div class="feature-icon bg-warning bg-opacity-10 mb-3">
               <i class="bi bi-soundwave text-warning" style="font-size: 24px;"></i>
             </div>
@@ -113,7 +113,7 @@
         </div>
 
         <div class="col-md-6 col-lg-3">
-          <div class="text-center p-3">
+          <div class="text-center p-3 violation-item">
             <div class="feature-icon bg-primary bg-opacity-10 mb-3">
               <i class="bi bi-tsunami text-primary" style="font-size: 24px;"></i>
             </div>
@@ -123,7 +123,7 @@
         </div>
 
         <div class="col-md-6 col-lg-3">
-          <div class="text-center p-3">
+          <div class="text-center p-3 violation-item">
             <div class="feature-icon bg-danger bg-opacity-10 mb-3">
               <i class="bi bi-fire text-danger" style="font-size: 24px;"></i>
             </div>
@@ -133,7 +133,7 @@
         </div>
 
         <div class="col-md-6 col-lg-3">
-          <div class="text-center p-3">
+          <div class="text-center p-3 violation-item">
             <div class="feature-icon bg-dark bg-opacity-10 mb-3">
               <i class="bi bi-building text-dark" style="font-size: 24px;"></i>
             </div>

@@ -8,70 +8,94 @@
 <style>
   body {
     background: #f4f6f8;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
   }
-  .form-card {
-    background: #fff;
-    border-radius: 12px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-    padding: 32px 24px;
-    max-width: 600px;
-    margin: 48px auto;
+  main {
+    flex: 1 0 auto;
+  }
+  footer {
+    flex-shrink: 0;
+  }
+  .form-control::placeholder,
+  .form-select::placeholder {
+    font-size: 14px;
   }
   #map {
-    height: 250px;
+    height: 100%;
+    min-height: 400px;
     border-radius: 8px;
-    margin-bottom: 1rem;
   }
-  @media (max-width: 767px) {
-    .form-card { padding: 18px 6px; margin: 24px 0; }
-    #map { height: 160px; }
+  .map-container {
+    position: sticky;
+    top: 90px;
+  }
+  @media (max-width: 991px) {
+    #map {
+      min-height: 300px;
+      margin-bottom: 2rem;
+    }
+    .map-container {
+      position: relative;
+      top: 0;
+    }
   }
 </style>
 @endpush
 
 @section('content')
-  <!-- Report Form -->
-  <main class="container" style="padding-top: 90px;">
-    <div class="form-card">
-      <h4 class="fw-bold mb-3 text-success">📋 Submit an Environmental Concern</h4>
-      <form id="reportForm" enctype="multipart/form-data">
-        @csrf
-        <div class="mb-3">
-          <label class="form-label">Type of Violation</label>
-          <select name="violation_type" class="form-select" required>
-            <option selected disabled value="">Choose type...</option>
-            @foreach($violationTypes as $type)
-              <option value="{{ $type->slug }}">{{ $type->name }}</option>
-            @endforeach
-          </select>
-          <small class="text-muted">Select the type of environmental violation you want to report.</small>
-        </div>
-        <div class="mb-3">
-          <label class="form-label">Description</label>
-          <textarea name="description" class="form-control" rows="4" placeholder="Describe what you observed..." required></textarea>
-        </div>
-        <div class="mb-3">
-          <label class="form-label">Upload Photo (Optional)</label>
-          <div class="upload-box" id="uploadBox">
-            <p id="uploadText">📸 Click or drag an image here to upload</p>
-            <input type="file" name="photo" accept="image/*" class="form-control mt-2" style="display:none;" id="photoInput">
+  <main class="container py-5" style="padding-top: 100px !important;">
+    <div class="card border-0 shadow-sm">
+      <div class="card-body p-4">
+        <h4 class="card-title mb-2" style="font-weight: 600; color: #212529;">Submit Report</h4>
+        <p class="text-muted mb-4" style="font-size: 14px;">Report environmental violations</p>
+
+        <div class="row g-4">
+          <!-- Right Column - Map (appears first on mobile) -->
+          <div class="col-lg-6 order-1 order-lg-2">
+            <div class="map-container">
+              <div id="map"></div>
+              <button type="button" id="getLocationBtn" class="btn btn-outline-success w-100 mt-3">
+                <i class="bi bi-crosshair me-2"></i>Use My Current Location
+              </button>
+              <small class="text-muted d-block mt-2 text-center">Click on the map or search to pin the location</small>
+            </div>
           </div>
-          <small class="text-muted d-block mt-2" id="fileName"></small>
+
+          <!-- Left Column - Form (appears second on mobile) -->
+          <div class="col-lg-6 order-2 order-lg-1">
+            <form id="reportForm" enctype="multipart/form-data">
+              @csrf
+              <input type="hidden" name="latitude" id="latitude">
+              <input type="hidden" name="longitude" id="longitude">
+
+              <div class="mb-3">
+                <label class="form-label fw-medium" style="font-size: 14px;">Type of Violation</label>
+                <select name="violation_type" class="form-select" required>
+                  <option selected disabled value="">Select violation type</option>
+                  @foreach($violationTypes as $type)
+                    <option value="{{ $type->slug }}">{{ $type->name }}</option>
+                  @endforeach
+                </select>
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label fw-medium" style="font-size: 14px;">Description</label>
+                <textarea name="description" class="form-control" rows="4" placeholder="Describe what you observed..." required></textarea>
+              </div>
+
+              <div class="mb-4">
+                <label class="form-label fw-medium" style="font-size: 14px;">Upload Photo <span class="text-muted">(Optional)</span></label>
+                <input type="file" name="photo" accept="image/*" class="form-control" id="photoInput">
+                <small class="text-muted" id="fileName"></small>
+              </div>
+
+              <button type="submit" class="btn btn-success btn-lg w-100">Submit Report</button>
+            </form>
+          </div>
         </div>
-        <input type="hidden" name="latitude" id="latitude">
-        <input type="hidden" name="longitude" id="longitude">
-        <div class="mb-3">
-          <label class="form-label">Pin or Search Location</label>
-          <div id="map"></div>
-          <button type="button" id="getLocationBtn" class="btn btn-outline-primary btn-sm mt-2 mb-2 w-100">
-            <i class="bi bi-crosshair me-2"></i>Get My Current Location
-          </button>
-          <small class="text-muted d-block">Click the button above to use your current location, or click/search on the map to mark the location of the incident.</small>
-        </div>
-        <div class="d-flex justify-content-end">
-          <button type="submit" class="btn btn-submit px-4">Submit Report</button>
-        </div>
-      </form>
+      </div>
     </div>
   </main>
 @endsection
@@ -156,16 +180,11 @@
   })
   .addTo(map);
 
-  // Upload box trigger
-  const uploadBox = document.getElementById('uploadBox');
-  const photoInput = document.getElementById('photoInput');
-  uploadBox.addEventListener('click', () => photoInput.click());
-
   // Show selected file name
+  const photoInput = document.getElementById('photoInput');
   photoInput.addEventListener('change', function(e) {
     const fileName = e.target.files[0]?.name;
     if (fileName) {
-      document.getElementById('uploadText').innerHTML = '✅ Image selected';
       document.getElementById('fileName').innerHTML = '<strong>Selected:</strong> ' + fileName;
     }
   });
@@ -229,7 +248,6 @@
         reportForm.reset();
         if (marker) map.removeLayer(marker);
         marker = null;
-        document.getElementById('uploadText').innerHTML = '📸 Click or drag an image here to upload';
         document.getElementById('fileName').innerHTML = '';
         
         // Reset button

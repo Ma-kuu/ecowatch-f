@@ -73,24 +73,32 @@
       <h2 class="fw-bold mb-5">Common Violations to Report</h2>
       <div class="row g-4">
         <div class="col-6 col-lg-3">
-          <i class="bi bi-trash text-success mb-3" style="font-size: 50px;"></i>
-          <h6 class="fw-semibold">Illegal Dumping</h6>
-          <p class="text-muted small">Unauthorized waste disposal in natural areas.</p>
+          <div class="violation-item">
+            <i class="bi bi-trash text-success mb-3" style="font-size: 50px;"></i>
+            <h6 class="fw-semibold">Illegal Dumping</h6>
+            <p class="text-muted small">Unauthorized waste disposal in natural areas.</p>
+          </div>
         </div>
         <div class="col-6 col-lg-3">
-          <i class="bi bi-droplet text-success mb-3" style="font-size: 50px;"></i>
-          <h6 class="fw-semibold">Water Pollution</h6>
-          <p class="text-muted small">Chemical spills or industrial runoff.</p>
+          <div class="violation-item">
+            <i class="bi bi-droplet text-success mb-3" style="font-size: 50px;"></i>
+            <h6 class="fw-semibold">Water Pollution</h6>
+            <p class="text-muted small">Chemical spills or industrial runoff.</p>
+          </div>
         </div>
         <div class="col-6 col-lg-3">
-          <i class="bi bi-wind text-success mb-3" style="font-size: 50px;"></i>
-          <h6 class="fw-semibold">Air Pollution</h6>
-          <p class="text-muted small">Smoke, industrial emissions, or open burning.</p>
+          <div class="violation-item">
+            <i class="bi bi-wind text-success mb-3" style="font-size: 50px;"></i>
+            <h6 class="fw-semibold">Air Pollution</h6>
+            <p class="text-muted small">Smoke, industrial emissions, or open burning.</p>
+          </div>
         </div>
         <div class="col-6 col-lg-3">
-          <i class="bi bi-tree text-success mb-3" style="font-size: 50px;"></i>
-          <h6 class="fw-semibold">Deforestation</h6>
-          <p class="text-muted small">Illegal logging or land clearing.</p>
+          <div class="violation-item">
+            <i class="bi bi-tree text-success mb-3" style="font-size: 50px;"></i>
+            <h6 class="fw-semibold">Deforestation</h6>
+            <p class="text-muted small">Illegal logging or land clearing.</p>
+          </div>
         </div>
       </div>
     </div>

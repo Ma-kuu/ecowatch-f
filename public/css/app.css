@@ -3,6 +3,63 @@ body {
   font-family: 'Inter', sans-serif;
 }
 
+/* Hover Animations */
+.card {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 16px rgba(0,0,0,0.15) !important;
+}
+
+.violation-item {
+  transition: transform 0.3s ease;
+  cursor: pointer;
+}
+
+.violation-item:hover {
+  transform: translateY(-5px);
+}
+
+.violation-item i {
+  transition: transform 0.3s ease, color 0.3s ease;
+}
+
+.violation-item:hover i {
+  transform: scale(1.1);
+}
+
+.mission-feature {
+  transition: transform 0.3s ease;
+}
+
+.mission-feature:hover {
+  transform: translateY(-5px);
+}
+
+.mission-feature i {
+  transition: transform 0.3s ease;
+}
+
+.mission-feature:hover i {
+  transform: scale(1.1);
+}
+
+/* Button Animations */
+.btn {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+.btn:active {
+  transform: translateY(0);
+}
+
 /* Navbar */
 .navbar {
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);

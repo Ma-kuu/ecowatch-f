@@ -48,18 +48,40 @@ Route::get('/report-anon', function () {
     return view('report-anon', ['violationTypes' => $violationTypes]);
 })->name('report-anon');
 
+// Report submission routes
+Route::post('/report-anon', function () {
+    // Add report submission logic here when implementing backend
+    return response()->json(['success' => true, 'message' => 'Report submitted successfully']);
+})->name('report-anon.store');
+
+Route::post('/report', function () {
+    // Add authenticated report submission logic here when implementing backend
+    return response()->json(['success' => true, 'message' => 'Report submitted successfully']);
+})->name('report.store');
+
+Route::get('/report/{id}', function ($id) {
+    // Add logic to fetch report by ID when implementing backend
+    return view('report-show', [
+        'report' => (object)[
+            'id' => $id,
+            'title' => 'Sample Report',
+            'status' => 'pending',
+        ]
+    ]);
+})->name('report.show');
+
 // Authentication Pages (static views only)
 Route::get('/login', function () {
-    return view('auth.admin.login');
+    return view('login');
 })->name('login');
 
 Route::get('/register', function () {
-    return view('auth.admin.register');
+    return view('register');
 })->name('register');
 
 // Dashboard Pages (static views only)
 Route::get('/user-dashboard', function () {
-    return view('auth.admin.user-dashboard', [
+    return view('auth.user-dashboard', [
         'userReports' => collect([]), // Empty collection for now
         'totalUserReports' => 0,
         'pendingCount' => 0,
@@ -67,7 +89,7 @@ Route::get('/user-dashboard', function () {
 })->name('user-dashboard');
 
 Route::get('/admin-dashboard', function () {
-    return view('auth.admin.admin-dashboard', [
+    return view('auth.admin-dashboard', [
         'reports' => collect([]), // Empty collection for now
         'totalReports' => 0,
         'pendingReports' => 0,
@@ -77,7 +99,7 @@ Route::get('/admin-dashboard', function () {
 })->name('admin-dashboard');
 
 Route::get('/lgu-dashboard', function () {
-    return view('auth.lgu.lgu-dashboard', [
+    return view('auth.lgu-dashboard', [
         'lguReports' => collect([]), // Empty collection for now
         'totalAssigned' => 0,
         'pendingAssigned' => 0,
@@ -88,7 +110,7 @@ Route::get('/lgu-dashboard', function () {
 })->name('lgu-dashboard');
 
 Route::get('/admin-settings', function () {
-    return view('auth.admin.admin-settings', [
+    return view('auth.admin-settings', [
         'users' => collect([]), // Empty collection for now
         'totalUsers' => 0,
     ]);
