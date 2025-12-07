@@ -22,8 +22,57 @@
   <main class="flex-grow-1" style="padding-top: 100px; padding-bottom: 40px;">
     <div class="container">
       <div class="row g-4">
-        <!-- MAIN FEED -->
-        <div class="col-lg-8">
+        <!-- SIDEBAR (LEFT) -->
+        <div class="col-lg-3">
+          <div class="card border-0 shadow-sm">
+            <div class="card-body p-3">
+              <h6 class="fw-bold mb-1 text-center">Filter Reports</h6>
+              <p class="text-muted text-center mb-3" style="font-size: 13px;">Narrow down by category and status</p>
+
+              <div class="mb-2">
+                <label class="form-label fw-medium mb-1" style="font-size: 13px;">Category</label>
+                <select id="filterType" class="form-select form-select-sm">
+                  <option value="">All categories</option>
+                  <option>Illegal Dumping</option>
+                  <option>Water Pollution</option>
+                  <option>Air Pollution</option>
+                  <option>Deforestation</option>
+                </select>
+              </div>
+
+              <div class="mb-2">
+                <label class="form-label fw-medium mb-1" style="font-size: 13px;">Status</label>
+                <select id="filterStatus" class="form-select form-select-sm">
+                  <option value="">All statuses</option>
+                  <option>Pending</option>
+                  <option>In Progress</option>
+                  <option>Resolved</option>
+                </select>
+              </div>
+
+              <div class="d-grid gap-2 mb-2">
+                <button class="btn btn-success btn-sm">Apply Filters</button>
+                <button class="btn btn-outline-secondary btn-sm">Clear Filters</button>
+              </div>
+              <hr class="my-2">
+              <h6 class="mb-2" style="font-size: 14px;">Top Categories</h6>
+              @forelse($topCategories ?? [] as $category)
+              <div class="d-flex justify-content-between mb-1"><small style="font-size: 12px;">{{ $category->name }}</small><strong style="font-size: 12px;">{{ $category->count }}</strong></div>
+              @empty
+              <p class="small text-muted mb-0" style="font-size: 12px;">No data available</p>
+              @endforelse
+              <hr class="my-2">
+              <div class="text-center">
+                <h6 class="mb-1" style="font-size: 14px;">LGU Portal</h6>
+                <p class="small text-muted mb-2" style="font-size: 12px;">Responders and local government access</p>
+                <a href="{{ route('login') }}" class="btn btn-sm btn-outline-success">Open Admin</a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- MAIN FEED (RIGHT) -->
+        <div class="col-lg-9">
           <h4 class="mb-3 fw-bold">Recent Reports</h4>
 
           @forelse($feedReports ?? [] as $report)
@@ -71,45 +120,6 @@
             <button class="btn btn-outline-secondary">Load more</button>
           </div>
           @endif
-        </div>
-
-        <!-- SIDEBAR -->
-        <div class="col-lg-4">
-          <div class="card shadow-sm">
-            <div class="card-body">
-              <h6 class="mb-2">Filters</h6>
-              <select id="filterType" class="form-select form-select-sm mb-2">
-                <option value="">All categories</option>
-                <option>Illegal Dumping</option>
-                <option>Water Pollution</option>
-                <option>Air Pollution</option>
-                <option>Deforestation</option>
-              </select>
-              <select id="filterStatus" class="form-select form-select-sm mb-3">
-                <option value="">All statuses</option>
-                <option>Pending</option>
-                <option>In Progress</option>
-                <option>Resolved</option>
-              </select>
-              <div class="d-grid gap-2 mb-3">
-                <button class="btn btn-sm btn-success">Apply</button>
-                <button class="btn btn-sm btn-outline-secondary">Clear</button>
-              </div>
-              <hr>
-              <h6 class="mb-2">Top Categories</h6>
-              @forelse($topCategories ?? [] as $category)
-              <div class="d-flex justify-content-between mb-1"><small>{{ $category->name }}</small><strong>{{ $category->count }}</strong></div>
-              @empty
-              <p class="small text-muted">No data available</p>
-              @endforelse
-              <hr>
-              <div class="text-center">
-                <h6 class="mb-1">LGU Portal</h6>
-                <p class="small text-muted mb-2">Responders and local government access</p>
-                <a href="{{ route('login') }}" class="btn btn-sm btn-outline-success">Open Admin</a>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
     </div>

@@ -25,6 +25,8 @@ class Report extends Model
         'description',
         'location_address',
         'barangay_id',
+        'purok',
+        'sitio',
         'latitude',
         'longitude',
         'status',

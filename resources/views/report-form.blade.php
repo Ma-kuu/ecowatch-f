@@ -10,7 +10,7 @@
         <i class="bi bi-clipboard-check text-success" style="font-size: 64px;"></i>
       </div>
       <h1 class="display-5 fw-bold mb-3">Ready to Report?</h1>
-      <p class="lead text-muted mb-5">Choose how you'd like to submit your environmental violation report.</p>
+      <p class="lead text-muted mb-5">Report environmental violations in Davao del Norte. Choose how you'd like to submit your report.</p>
 
       <!-- Report Options -->
       <div class="row g-4 justify-content-center mb-5">

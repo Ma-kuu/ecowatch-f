@@ -23,22 +23,12 @@
     font-size: 14px;
   }
   #map {
-    height: 100%;
-    min-height: 400px;
+    height: 400px;
     border-radius: 8px;
-  }
-  .map-container {
-    position: sticky;
-    top: 90px;
   }
   @media (max-width: 991px) {
     #map {
-      min-height: 300px;
-      margin-bottom: 2rem;
-    }
-    .map-container {
-      position: relative;
-      top: 0;
+      height: 300px;
     }
   }
 </style>
@@ -49,27 +39,16 @@
     <div class="card border-0 shadow-sm">
       <div class="card-body p-4">
         <h4 class="card-title mb-2" style="font-weight: 600; color: #212529;">Submit Report</h4>
-        <p class="text-muted mb-4" style="font-size: 14px;">Report environmental violations</p>
+        <p class="text-muted mb-4" style="font-size: 14px;">Report environmental violations in Davao del Norte</p>
 
-        <div class="row g-4">
-          <!-- Right Column - Map (appears first on mobile) -->
-          <div class="col-lg-6 order-1 order-lg-2">
-            <div class="map-container">
-              <div id="map"></div>
-              <button type="button" id="getLocationBtn" class="btn btn-outline-success w-100 mt-3">
-                <i class="bi bi-crosshair me-2"></i>Use My Current Location
-              </button>
-              <small class="text-muted d-block mt-2 text-center">Click on the map or search to pin the location</small>
-            </div>
-          </div>
+        <form id="reportForm" enctype="multipart/form-data">
+          @csrf
+          <input type="hidden" name="latitude" id="latitude">
+          <input type="hidden" name="longitude" id="longitude">
 
-          <!-- Left Column - Form (appears second on mobile) -->
-          <div class="col-lg-6 order-2 order-lg-1">
-            <form id="reportForm" enctype="multipart/form-data">
-              @csrf
-              <input type="hidden" name="latitude" id="latitude">
-              <input type="hidden" name="longitude" id="longitude">
-
+          <div class="row g-4">
+            <!-- Left Column - Form Fields (appears first on mobile) -->
+            <div class="col-lg-6">
               <div class="mb-3">
                 <label class="form-label fw-medium" style="font-size: 14px;">Type of Violation</label>
                 <select name="violation_type" class="form-select" required>
@@ -85,16 +64,60 @@
                 <textarea name="description" class="form-control" rows="4" placeholder="Describe what you observed..." required></textarea>
               </div>
 
-              <div class="mb-4">
+              <!-- City/Municipality -->
+              <div class="mb-3">
+                <label class="form-label fw-medium" style="font-size: 14px;">City/Municipality</label>
+                <select name="lgu_id" id="lguSelect" class="form-select" required>
+                  <option value="" selected disabled>Select city/municipality</option>
+                  <!-- Populated via JavaScript -->
+                </select>
+              </div>
+
+              <!-- Barangay -->
+              <div class="mb-3">
+                <label class="form-label fw-medium" style="font-size: 14px;">Barangay</label>
+                <select name="barangay_id" id="barangaySelect" class="form-select" required disabled>
+                  <option value="" selected disabled>Select city/municipality first</option>
+                  <!-- Populated via JavaScript -->
+                </select>
+              </div>
+
+              <!-- Purok and Sitio (Optional) -->
+              <div class="row g-2 mb-3">
+                <div class="col-md-6">
+                  <label class="form-label fw-medium" style="font-size: 14px;">Purok <span class="text-muted">(Optional)</span></label>
+                  <input type="text" name="purok" class="form-control" placeholder="Enter purok">
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label fw-medium" style="font-size: 14px;">Sitio <span class="text-muted">(Optional)</span></label>
+                  <input type="text" name="sitio" class="form-control" placeholder="Enter sitio">
+                </div>
+              </div>
+
+              <div class="mb-3">
                 <label class="form-label fw-medium" style="font-size: 14px;">Upload Photo <span class="text-muted">(Optional)</span></label>
                 <input type="file" name="photo" accept="image/*" class="form-control" id="photoInput">
                 <small class="text-muted" id="fileName"></small>
               </div>
+            </div>
 
-              <button type="submit" class="btn btn-success btn-lg w-100">Submit Report</button>
-            </form>
+            <!-- Right Column - Map (appears second on mobile) -->
+            <div class="col-lg-6">
+              <button type="button" id="getLocationBtn" class="btn btn-outline-success w-100 mb-3">
+                <i class="bi bi-crosshair me-2"></i>Use My Current Location
+              </button>
+              <div id="map"></div>
+              <small class="text-muted d-block mt-2 text-center">Click on the map or search to pin the location</small>
+            </div>
           </div>
-        </div>
+
+          <!-- Submit Button - Appears at the bottom on all screen sizes -->
+          <div class="row mt-4">
+            <div class="col-12">
+              <button type="submit" class="btn btn-success btn-lg w-100">Submit Report</button>
+            </div>
+          </div>
+        </form>
       </div>
     </div>
   </main>
@@ -103,11 +126,11 @@
 @push('scripts')
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
+<script src="{{ asset('js/location-dropdowns.js') }}"></script>
 <script>
-  // Leaflet Map Setup
+  // Map Setup
   const map = L.map('map').setView([7.1907, 125.4553], 13);
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
-
   let marker;
   
   // Get My Location Button
@@ -200,23 +223,30 @@
     document.getElementById('longitude').value = e.latlng.lng;
   });
 
-  // Form submission handler
-  const reportForm = document.getElementById('reportForm');
-  reportForm.addEventListener('submit', function(e) {
+  // Form Submission
+  document.getElementById('reportForm').addEventListener('submit', function(e) {
     e.preventDefault();
-    
-    // Validate marker is set
+
+    // Validation
     if (!marker) {
-      window.showNotification({
+      return window.showNotification({
         title: 'Location Required',
-        message: 'Please select a location on the map or use "Get My Location" button.',
+        message: 'Please pin a location on the map.',
         type: 'warning',
         duration: 4000
       });
-      return;
     }
 
-    // Show loading state
+    if (!document.getElementById('barangaySelect').value) {
+      return window.showNotification({
+        title: 'Barangay Required',
+        message: 'Please select a barangay.',
+        type: 'warning',
+        duration: 4000
+      });
+    }
+
+    // Submit
     const submitBtn = this.querySelector('button[type="submit"]');
     const originalText = submitBtn.innerHTML;
     submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Submitting...';

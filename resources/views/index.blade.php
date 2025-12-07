@@ -13,7 +13,7 @@
             <span class="text-success d-block">Safely & Securely</span>
           </h1>
           <p class="lead text-dark mb-5">
-            Help protect our environment by reporting environmental violations through our platform.
+            Help protect our environment by reporting environmental violations in <strong>Davao del Norte</strong> through our secure platform.
           </p>
           <div class="d-flex flex-column flex-sm-row gap-3">
             <a href="{{ route('report-form') }}" class="btn btn-success btn-lg px-4">Report a Violation</a>
@@ -28,7 +28,7 @@
   <section class="py-5 bg-white text-center">
     <div class="container py-4">
       <h2 class="fw-bold mb-4">How It Works</h2>
-      <p class="text-muted mb-5">Simple steps to report and make a difference.</p>
+      <p class="text-muted mb-5">Report environmental violations across Davao del Norte in three simple steps.</p>
       <div class="row g-4">
         <div class="col-md-4">
           <div class="card border-0 shadow-sm h-100">

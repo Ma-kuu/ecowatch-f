@@ -11,7 +11,7 @@
         <img src="{{ asset('images/logo-about.png') }}" alt="EcoWatch" height="70">
       </div>
       <p class="lead text-muted mb-0">
-        Empowering communities to protect the environment through secure and anonymous reporting.
+        Empowering communities across <strong>Davao del Norte</strong> to protect the environment through secure and anonymous reporting.
       </p>
     </div>
   </section>
@@ -23,7 +23,7 @@
         <div class="col-lg-6 mb-4 mb-lg-0">
           <h2 class="fw-bold mb-4">Our Mission</h2>
           <p class="text-muted mb-3">
-            EcoWatch is a secure platform dedicated to protecting our environment by enabling citizens
+            EcoWatch is a secure platform dedicated to protecting the environment in <strong>Davao del Norte</strong> by enabling citizens
             to report environmental violations safely and anonymously. We believe that every individual
             has the power to make a difference in preserving our planet for future generations.
           </p>

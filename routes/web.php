@@ -1,5 +1,9 @@
 <?php
 
+use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\Auth\RegisterController;
+use App\Http\Controllers\ReportController;
+use App\Http\Controllers\AnonymousReportController;
 use Illuminate\Support\Facades\Route;
 
 // Public Pages
@@ -20,104 +24,78 @@ Route::get('/report-form', function () {
     return view('report-form');
 })->name('report-form');
 
-Route::get('/report-authenticated', function () {
-    $violationTypes = collect([
-        (object)['slug' => 'illegal-dumping', 'name' => 'Illegal Dumping'],
-        (object)['slug' => 'water-pollution', 'name' => 'Water Pollution'],
-        (object)['slug' => 'air-pollution', 'name' => 'Air Pollution'],
-        (object)['slug' => 'deforestation', 'name' => 'Deforestation'],
-        (object)['slug' => 'noise-pollution', 'name' => 'Noise Pollution'],
-        (object)['slug' => 'soil-contamination', 'name' => 'Soil Contamination'],
-        (object)['slug' => 'wildlife-violations', 'name' => 'Wildlife Violations'],
-        (object)['slug' => 'industrial-violations', 'name' => 'Industrial Violations'],
-    ]);
-    return view('report-show', ['violationTypes' => $violationTypes]);
-})->name('report-authenticated');
+// Report Routes (using controllers)
+Route::get('/report-anon', [AnonymousReportController::class, 'create'])->name('report-anon');
+Route::post('/report-anon', [AnonymousReportController::class, 'store'])->name('report-anon.store');
 
-Route::get('/report-anon', function () {
-    $violationTypes = collect([
-        (object)['slug' => 'illegal-dumping', 'name' => 'Illegal Dumping'],
-        (object)['slug' => 'water-pollution', 'name' => 'Water Pollution'],
-        (object)['slug' => 'air-pollution', 'name' => 'Air Pollution'],
-        (object)['slug' => 'deforestation', 'name' => 'Deforestation'],
-        (object)['slug' => 'noise-pollution', 'name' => 'Noise Pollution'],
-        (object)['slug' => 'soil-contamination', 'name' => 'Soil Contamination'],
-        (object)['slug' => 'wildlife-violations', 'name' => 'Wildlife Violations'],
-        (object)['slug' => 'industrial-violations', 'name' => 'Industrial Violations'],
-    ]);
-    return view('report-anon', ['violationTypes' => $violationTypes]);
-})->name('report-anon');
+Route::middleware('auth')->group(function () {
+    Route::get('/report', [ReportController::class, 'create'])->name('report.create');
+    Route::post('/report', [ReportController::class, 'store'])->name('report.store');
+    Route::get('/report/{id}', [ReportController::class, 'show'])->name('report.show');
+    Route::put('/report/{id}', [ReportController::class, 'update'])->name('report.update');
+});
 
-// Report submission routes
-Route::post('/report-anon', function () {
-    // Add report submission logic here when implementing backend
-    return response()->json(['success' => true, 'message' => 'Report submitted successfully']);
-})->name('report-anon.store');
+// Location API Endpoints
+Route::get('/api/lgus', function () {
+    return \App\Models\Lgu::where('province', 'Davao del Norte')
+        ->where('is_active', true)
+        ->orderBy('name')
+        ->get(['id', 'name', 'code']);
+});
 
-Route::post('/report', function () {
-    // Add authenticated report submission logic here when implementing backend
-    return response()->json(['success' => true, 'message' => 'Report submitted successfully']);
-})->name('report.store');
+Route::get('/api/lgus/{lguId}/barangays', function ($lguId) {
+    return \App\Models\Barangay::where('lgu_id', $lguId)
+        ->where('is_active', true)
+        ->orderBy('name')
+        ->get(['id', 'name', 'code']);
+});
 
-Route::get('/report/{id}', function ($id) {
-    // Add logic to fetch report by ID when implementing backend
-    return view('report-show', [
-        'report' => (object)[
-            'id' => $id,
-            'title' => 'Sample Report',
-            'status' => 'pending',
-        ]
-    ]);
-})->name('report.show');
+// Authentication Routes (using controllers)
+Route::middleware('guest')->group(function () {
+    Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
+    Route::post('/login', [LoginController::class, 'login']);
 
-// Authentication Pages (static views only)
-Route::get('/login', function () {
-    return view('login');
-})->name('login');
+    Route::get('/register', [RegisterController::class, 'showRegistrationForm'])->name('register');
+    Route::post('/register', [RegisterController::class, 'register']);
+});
 
-Route::get('/register', function () {
-    return view('register');
-})->name('register');
+Route::post('/logout', [LoginController::class, 'logout'])->name('logout')->middleware('auth');
 
-// Dashboard Pages (static views only)
-Route::get('/user-dashboard', function () {
-    return view('auth.user-dashboard', [
-        'userReports' => collect([]), // Empty collection for now
-        'totalUserReports' => 0,
-        'pendingCount' => 0,
-    ]);
-})->name('user-dashboard');
+// Dashboard Routes (protected with auth middleware)
+Route::middleware('auth')->group(function () {
+    Route::get('/user-dashboard', function () {
+        return view('auth.user-dashboard', [
+            'userReports' => collect([]), // Empty collection for now
+            'totalUserReports' => 0,
+            'pendingCount' => 0,
+        ]);
+    })->name('user-dashboard');
 
-Route::get('/admin-dashboard', function () {
-    return view('auth.admin-dashboard', [
-        'reports' => collect([]), // Empty collection for now
-        'totalReports' => 0,
-        'pendingReports' => 0,
-        'inReviewReports' => 0,
-        'resolvedReports' => 0,
-    ]);
-})->name('admin-dashboard');
+    Route::get('/admin-dashboard', function () {
+        return view('auth.admin-dashboard', [
+            'reports' => collect([]), // Empty collection for now
+            'totalReports' => 0,
+            'pendingReports' => 0,
+            'inReviewReports' => 0,
+            'resolvedReports' => 0,
+        ]);
+    })->name('admin-dashboard');
 
-Route::get('/lgu-dashboard', function () {
-    return view('auth.lgu-dashboard', [
-        'lguReports' => collect([]), // Empty collection for now
-        'totalAssigned' => 0,
-        'pendingAssigned' => 0,
-        'inProgressAssigned' => 0,
-        'fixedAssigned' => 0,
-        'verifiedAssigned' => 0,
-    ]);
-})->name('lgu-dashboard');
+    Route::get('/lgu-dashboard', function () {
+        return view('auth.lgu-dashboard', [
+            'lguReports' => collect([]), // Empty collection for now
+            'totalAssigned' => 0,
+            'pendingAssigned' => 0,
+            'inProgressAssigned' => 0,
+            'fixedAssigned' => 0,
+            'verifiedAssigned' => 0,
+        ]);
+    })->name('lgu-dashboard');
 
-Route::get('/admin-settings', function () {
-    return view('auth.admin-settings', [
-        'users' => collect([]), // Empty collection for now
-        'totalUsers' => 0,
-    ]);
-})->name('admin-settings');
-
-// Logout Route
-Route::post('/logout', function () {
-    // Add logout logic here when implementing authentication
-    return redirect()->route('login');
-})->name('logout');
+    Route::get('/admin-settings', function () {
+        return view('auth.admin-settings', [
+            'users' => collect([]), // Empty collection for now
+            'totalUsers' => 0,
+        ]);
+    })->name('admin-settings');
+});
