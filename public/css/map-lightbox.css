@@ -1,26 +1,28 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+/* ============================================================================
+   Map Lightbox Styles
+   Reusable styles for map enlarge/lightbox functionality
+   ============================================================================ */
 
-/* Shared map lightbox styles (used by dashboards, report pages, and feed) */
+/* Map enlarge button */
 .map-enlarge-btn {
   position: absolute;
   top: 10px;
   right: 10px;
   z-index: 1000;
   background: white;
-  border: 2px solid rgba(0, 0, 0, 0.2);
+  border: 2px solid rgba(0,0,0,0.2);
   border-radius: 4px;
   padding: 5px 10px;
   cursor: pointer;
   font-size: 18px;
-  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 1px 5px rgba(0,0,0,0.15);
 }
 
 .map-enlarge-btn:hover {
   background: #f4f4f4;
 }
 
+/* Map lightbox overlay */
 .map-lightbox-overlay {
   display: none;
   position: fixed;
@@ -39,6 +41,7 @@
   opacity: 1;
 }
 
+/* Map lightbox container */
 .map-lightbox-container {
   display: none;
   position: fixed;
@@ -49,7 +52,7 @@
   height: 85%;
   background: white;
   border-radius: 12px;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 10px 40px rgba(0,0,0,0.3);
   z-index: 9999;
   padding: 15px;
   opacity: 0;
@@ -62,6 +65,7 @@
   transform: translate(-50%, -50%) scale(1);
 }
 
+/* Close button */
 .map-lightbox-close {
   position: absolute;
   top: 20px;
@@ -74,7 +78,7 @@
   font-size: 24px;
   cursor: pointer;
   z-index: 10000;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -84,6 +88,7 @@
   background: #f0f0f0;
 }
 
+/* Enlarged map container */
 #enlargedMap {
   width: 100%;
   height: 100%;

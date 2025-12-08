@@ -135,6 +135,15 @@
   <!-- Toast Notification System -->
   @include('partials.toast-notification')
 
+  <!-- Shared map lightbox overlay for dashboard pages -->
+  <div class="map-lightbox-overlay" id="mapLightboxOverlay"></div>
+  <div class="map-lightbox-container" id="mapLightboxContainer">
+    <button class="map-lightbox-close" id="closeLightbox" title="Close">
+      <i class="bi bi-x"></i>
+    </button>
+    <div id="enlargedMap"></div>
+  </div>
+
   @stack('scripts')
 </body>
 </html>

@@ -37,8 +37,11 @@ class Report extends Model
         'admin_override',
         'resolved_at',
         'is_public',
+        'is_hidden',
+        'manual_priority',
         'priority',
         'upvotes_count',
+        'downvotes_count',
         'views_count',
     ];
 
@@ -52,7 +55,9 @@ class Report extends Model
         'admin_override' => 'boolean',
         'resolved_at' => 'datetime',
         'is_public' => 'boolean',
+        'is_hidden' => 'boolean',
         'upvotes_count' => 'integer',
+        'downvotes_count' => 'integer',
         'views_count' => 'integer',
     ];
 
@@ -126,6 +131,14 @@ class Report extends Model
     public function upvotes(): HasMany
     {
         return $this->hasMany(ReportUpvote::class);
+    }
+
+    /**
+     * Get the downvotes for this report.
+     */
+    public function downvotes(): HasMany
+    {
+        return $this->hasMany(ReportDownvote::class);
     }
 
     /**

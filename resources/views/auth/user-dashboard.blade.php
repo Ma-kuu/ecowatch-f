@@ -13,15 +13,15 @@
 @push('styles')
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <link rel="stylesheet" href="https://unpkg.com/leaflet.fullscreen@2.4.0/Control.FullScreen.css" />
-@endpush
-
-@section('additional-styles')
+<link rel="stylesheet" href="{{ asset('css/map-lightbox.css') }}" />
+<style>
   #map {
     height: 300px;
     background-color: #e9ecef;
     border-radius: 8px;
   }
-@endsection
+</style>
+@endpush
 
 @section('content')
   <!-- Page Header -->
@@ -254,8 +254,13 @@
                 <i class="bi bi-geo-alt-fill me-1"></i>Location
               </h6>
               <p class="mb-2" id="modalLocation"></p>
-              <!-- Map Placeholder -->
-              <div id="map" class="mb-0"></div>
+              <!-- Map with enlarge button -->
+              <div style="position: relative;">
+                <button class="map-enlarge-btn" id="enlargeMapBtn" title="Enlarge map">
+                  <i class="bi bi-arrows-fullscreen"></i>
+                </button>
+                <div id="map" class="mb-0"></div>
+              </div>
               <small class="text-muted">Interactive map showing report location</small>
             </div>
 
@@ -348,6 +353,9 @@
       </div>
     </div>
   </div>
+
+  <!-- Reusable Map Lightbox Component for Enlarged Map View -->
+  <x-map-lightbox />
 @endsection
 
 @push('scripts')
@@ -358,11 +366,13 @@
 <!-- Load our helper modules -->
 <script src="{{ asset('js/table-filter.js') }}"></script>
 <script src="{{ asset('js/map-helper.js') }}"></script>
+<script src="{{ asset('js/map-lightbox.js') }}"></script>
 
 <script>
   // Map variables
   let userMap = null;
   let userMarker = null;
+  let userMapLightbox = null;
 
   // Variable to store current report ID for confirm/reject actions
   let currentReportId = null;
@@ -470,6 +480,29 @@
 
     // Fix map display (important for maps in modals)
     refreshMap(userMap);
+
+    // Initialize lightbox/enlarged map behavior once the base map exists
+    if (!userMapLightbox) {
+      userMapLightbox = initMapLightbox({
+        enlargeButtonId: 'enlargeMapBtn',
+        overlayId: 'mapLightboxOverlay',
+        containerId: 'mapLightboxContainer',
+        enlargedMapId: 'enlargedMap',
+        sourceMap: userMap,
+        getSourcePosition: () => {
+          const mapData = getMapData('map');
+          return {
+            lat: mapData?.lat || 12.8797,
+            lng: mapData?.lng || 121.7740,
+            zoom: mapData?.lat ? 15 : 6,
+            hasMarker: !!(mapData && mapData.lat && mapData.lng),
+            markerLat: mapData?.lat,
+            markerLng: mapData?.lng,
+            label: mapData?.label || 'Report Location',
+          };
+        },
+      });
+    }
   });
 
   // =============================================================================

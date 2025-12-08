@@ -13,32 +13,12 @@
 @push('styles')
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<link rel="stylesheet" href="{{ asset('css/map-lightbox.css') }}" />
 <style>
-  /* Map enlarge button */
-  .map-enlarge-btn {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    z-index: 1000;
-    background: white;
-    border: 2px solid rgba(0,0,0,0.2);
-    border-radius: 4px;
-    padding: 5px 10px;
-    cursor: pointer;
-    font-size: 18px;
-    box-shadow: 0 1px 5px rgba(0,0,0,0.15);
-  }
-  .map-enlarge-btn:hover {
-    background: #f4f4f4;
-  }
-  /* Enlarged map state */
-  .map-enlarged {
-    height: 600px !important;
-    transition: height 0.3s ease;
-  }
-  .map-normal {
-    height: 300px !important;
-    transition: height 0.3s ease;
+  #viewMap {
+    height: 300px;
+    background-color: #e9ecef;
+    border-radius: 8px;
   }
 </style>
 @endpush
@@ -219,6 +199,20 @@
               <td class="py-3">{{ $report->location }}</td>
               <td class="py-3">
                 <span class="badge bg-{{ $report->status_color }}">{{ $report->status_display }}</span>
+                @if($report->is_hidden)
+                  <span class="badge bg-danger ms-1" title="Hidden from public feed">
+                    <i class="bi bi-eye-slash"></i> Hidden
+                  </span>
+                @endif
+                @if($report->manual_priority === 'boosted')
+                  <span class="badge bg-info ms-1" title="Boosted in feed">
+                    <i class="bi bi-arrow-up"></i> Boosted
+                  </span>
+                @elseif($report->manual_priority === 'suppressed')
+                  <span class="badge bg-secondary ms-1" title="Suppressed in feed">
+                    <i class="bi bi-arrow-down"></i> Suppressed
+                  </span>
+                @endif
               </td>
               <td class="py-3 text-center table-actions">
                 <button class="btn btn-sm btn-outline-primary me-1"
@@ -265,6 +259,8 @@
                           data-report-description="{{ $report->description }}"
                           data-report-priority="{{ $report->priority ?? 'medium' }}"
                           data-report-remarks="{{ $report->admin_remarks ?? '' }}"
+                          data-report-is-hidden="{{ $report->is_hidden ? '1' : '0' }}"
+                          data-report-manual-priority="{{ $report->manual_priority ?? 'normal' }}"
                           title="Edit Report">
                     <i class="bi bi-pencil"></i>
                   </button>
@@ -538,6 +534,32 @@
                 <option value="urgent">Urgent</option>
               </select>
             </div>
+
+            <hr class="my-4">
+
+            <!-- Feed Visibility Controls -->
+            <div class="mb-3">
+              <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" id="isHiddenSwitch" name="is_hidden" value="1">
+                <label class="form-check-label fw-semibold" for="isHiddenSwitch">
+                  <i class="bi bi-eye-slash me-1"></i>Hidden from public feed
+                </label>
+                <small class="text-muted d-block mt-1">When checked, this report will not appear in the public feed</small>
+              </div>
+            </div>
+
+            <!-- Manual Priority -->
+            <div class="mb-3">
+              <label for="manualPriority" class="form-label fw-semibold">
+                <i class="bi bi-sort-down me-1"></i>Feed Ranking Priority
+              </label>
+              <select class="form-select" name="manual_priority" id="manualPriority">
+                <option value="normal">Normal</option>
+                <option value="boosted">Boosted (show higher in feed)</option>
+                <option value="suppressed">Suppressed (show lower in feed)</option>
+              </select>
+              <small class="text-muted">Controls where this report appears in the feed regardless of upvotes</small>
+            </div>
           </div>
           <div class="modal-footer d-flex justify-content-between">
             <div>
@@ -558,6 +580,10 @@
       </div>
     </div>
   </div>
+
+  <!-- Reusable Map Lightbox Component for Enlarged Map View -->
+  <x-map-lightbox />
+
 @endsection
 
 @push('scripts')
@@ -567,34 +593,12 @@
 <!-- Load our helper modules -->
 <script src="{{ asset('js/modal-helper.js') }}"></script>
 <script src="{{ asset('js/map-helper.js') }}"></script>
+<script src="{{ asset('js/map-lightbox.js') }}"></script>
 
 <script>
   // Map variables
   let adminMap = null;
   let adminMarker = null;
-  let isMapEnlarged = false;
-
-  // Handle map enlarge button
-  document.getElementById('enlargeMapBtn').addEventListener('click', function() {
-    const mapElement = document.getElementById('viewMap');
-    const icon = this.querySelector('i');
-
-    // Toggle enlarged state
-    isMapEnlarged = !isMapEnlarged;
-
-    if (isMapEnlarged) {
-      mapElement.classList.remove('map-normal');
-      mapElement.classList.add('map-enlarged');
-      icon.className = 'bi bi-fullscreen-exit';
-    } else {
-      mapElement.classList.remove('map-enlarged');
-      mapElement.classList.add('map-normal');
-      icon.className = 'bi bi-arrows-fullscreen';
-    }
-
-    // Fix map display after resize (using our helper)
-    refreshMap(adminMap);
-  });
 
   // Handle View Report button clicks
   document.querySelectorAll('[data-bs-target="#viewReportModal"]').forEach(button => {
@@ -666,8 +670,13 @@
         'reportStatus': 'reportStatus',
         'reportDescription': 'reportDescription',
         'reportPriority': 'reportPriority',
-        'reportRemarks': 'adminRemarks'
+        'adminRemarks': 'adminRemarks',
+        'manualPriority': 'manualPriority'
       });
+
+      // Set is_hidden checkbox
+      const isHidden = this.dataset.reportIsHidden === '1';
+      document.getElementById('isHiddenSwitch').checked = isHidden;
 
       // Update form action using our helper
       setFormAction('editReportForm', `/admin/reports/${reportId}`);
@@ -743,6 +752,42 @@
 
     // Fix map display (using our helper)
     refreshMap(adminMap);
+
+    // Initialize lightbox/enlarged map behavior once the base map exists
+    if (!window.adminMapLightbox) {
+      window.adminMapLightbox = initMapLightbox({
+        enlargeButtonId: 'enlargeMapBtn',
+        overlayId: 'mapLightboxOverlay',
+        containerId: 'mapLightboxContainer',
+        enlargedMapId: 'enlargedMap',
+        sourceMap: adminMap,
+        getSourcePosition: () => {
+          const center = adminMap.getCenter();
+          const zoom = adminMap.getZoom();
+
+          let hasMarker = false;
+          let markerLat = null;
+          let markerLng = null;
+
+          if (adminMarker) {
+            const pos = adminMarker.getLatLng();
+            hasMarker = true;
+            markerLat = pos.lat;
+            markerLng = pos.lng;
+          }
+
+          return {
+            lat: center.lat,
+            lng: center.lng,
+            zoom: zoom,
+            hasMarker,
+            markerLat,
+            markerLng,
+            label: 'Report Location',
+          };
+        },
+      });
+    }
   });
 
   // Category Horizontal Bar Chart with Unique Colors per Violation

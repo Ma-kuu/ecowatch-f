@@ -7,6 +7,7 @@ use App\Http\Controllers\AnonymousReportController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\PublicFeedController;
 use Illuminate\Support\Facades\Route;
 
 // Public Pages
@@ -18,9 +19,9 @@ Route::get('/about', function () {
     return view('about');
 })->name('about');
 
-Route::get('/feed', function () {
-    return view('feed');
-})->name('feed');
+Route::get('/feed', [PublicFeedController::class, 'index'])->name('feed');
+Route::post('/feed/reports/{report}/upvote', [PublicFeedController::class, 'toggleUpvote'])->name('feed.upvote');
+Route::post('/feed/reports/{report}/downvote', [PublicFeedController::class, 'toggleDownvote'])->name('feed.downvote');
 
 // Report Pages
 Route::get('/report-form', function () {

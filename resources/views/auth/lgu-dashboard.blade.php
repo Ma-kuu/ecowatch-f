@@ -11,98 +11,16 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css" />
 @endpush
 
-@section('additional-styles')
-  /* Map enlarge button */
-  .map-enlarge-btn {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    z-index: 1000;
-    background: white;
-    border: 2px solid rgba(0,0,0,0.2);
-    border-radius: 4px;
-    padding: 5px 10px;
-    cursor: pointer;
-    font-size: 18px;
-    box-shadow: 0 1px 5px rgba(0,0,0,0.15);
-  }
-  .map-enlarge-btn:hover {
-    background: #f4f4f4;
-  }
-
+@push('styles')
+<link rel="stylesheet" href="{{ asset('css/map-lightbox.css') }}" />
+<style>
   #viewMap {
     height: 300px;
     background-color: #e9ecef;
     border-radius: 8px;
   }
-
-  /* Map lightbox overlay */
-  .map-lightbox-overlay {
-    display: none;
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.8);
-    z-index: 9998;
-    opacity: 0;
-    transition: opacity 0.3s ease;
-  }
-  .map-lightbox-overlay.active {
-    display: block;
-    opacity: 1;
-  }
-
-  .map-lightbox-container {
-    display: none;
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%) scale(0.9);
-    width: 90%;
-    height: 85%;
-    background: white;
-    border-radius: 12px;
-    box-shadow: 0 10px 40px rgba(0,0,0,0.3);
-    z-index: 9999;
-    padding: 15px;
-    opacity: 0;
-    transition: all 0.3s ease;
-  }
-  .map-lightbox-container.active {
-    display: block;
-    opacity: 1;
-    transform: translate(-50%, -50%) scale(1);
-  }
-
-  .map-lightbox-close {
-    position: absolute;
-    top: 20px;
-    right: 20px;
-    background: white;
-    border: none;
-    border-radius: 50%;
-    width: 40px;
-    height: 40px;
-    font-size: 24px;
-    cursor: pointer;
-    z-index: 10000;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  .map-lightbox-close:hover {
-    background: #f0f0f0;
-  }
-
-  #enlargedMap {
-    width: 100%;
-    height: 100%;
-    border-radius: 8px;
-  }
-@endsection
+</style>
+@endpush
 
 @section('content')
   <!-- Page Header -->
@@ -544,14 +462,8 @@
     </div>
   </div>
 
-  <!-- Map Lightbox -->
-  <div class="map-lightbox-overlay" id="mapLightboxOverlay"></div>
-  <div class="map-lightbox-container" id="mapLightboxContainer">
-    <button class="map-lightbox-close" id="closeLightbox" title="Close">
-      <i class="bi bi-x"></i>
-    </button>
-    <div id="enlargedMap"></div>
-  </div>
+  <!-- Map Lightbox Component -->
+  <x-map-lightbox />
 @endsection
 
 @push('scripts')
@@ -571,87 +483,15 @@
 <script src="{{ asset('js/table-filter.js') }}"></script>
 <script src="{{ asset('js/modal-helper.js') }}"></script>
 <script src="{{ asset('js/map-helper.js') }}"></script>
+<script src="{{ asset('js/map-lightbox.js') }}"></script>
 
 <script>
   // Map variables for modal view and lightbox
   let lguMap = null;
-  let lguEnlargedMap = null;
   let lguMarker = null;
-  let lguEnlargedMarker = null;
   let routingControl = null;
+  let mapLightbox = null;
   const lguHqLatLng = [{{ $lgu->latitude ?? 0 }}, {{ $lgu->longitude ?? 0 }}];
-
-  // =============================================================================
-  // LIGHTBOX FUNCTIONALITY
-  // =============================================================================
-
-  // Handle map enlarge button - open lightbox with current map state
-  document.getElementById('enlargeMapBtn').addEventListener('click', function() {
-    const overlay = document.getElementById('mapLightboxOverlay');
-    const container = document.getElementById('mapLightboxContainer');
-
-    // Get stored map data using our helper
-    const mapData = getMapData('viewMap');
-
-    // Show lightbox overlay with smooth animation
-    overlay.classList.add('active');
-    setTimeout(() => container.classList.add('active'), 10);
-
-    // Initialize or update enlarged map after animation
-    setTimeout(() => {
-      if (!lguEnlargedMap) {
-        // Create enlarged map first time (using our helper)
-        const defaultLat = mapData?.lat || 7.5;
-        const defaultLng = mapData?.lng || 125.8;
-        const zoom = mapData?.lat ? 15 : 13;
-        lguEnlargedMap = createMap('enlargedMap', defaultLat, defaultLng, zoom);
-      } else {
-        // Update existing enlarged map (using our helper)
-        const lat = mapData?.lat || 7.5;
-        const lng = mapData?.lng || 125.8;
-        const zoom = mapData?.lat ? 15 : 13;
-        updateMapView(lguEnlargedMap, lat, lng, zoom);
-        refreshMap(lguEnlargedMap);
-      }
-
-      // Add marker if coordinates exist
-      if (mapData && mapData.lat && mapData.lng) {
-        // Remove old marker if exists (using our helper)
-        if (lguEnlargedMarker) {
-          removeMarker(lguEnlargedMap, lguEnlargedMarker);
-        }
-
-        // Add new marker (using our helper)
-        lguEnlargedMarker = addMarker(lguEnlargedMap, mapData.lat, mapData.lng, mapData.label || 'Report Location');
-
-        // Open the popup
-        if (lguEnlargedMarker) {
-          lguEnlargedMarker.openPopup();
-        }
-      }
-    }, 350);
-  });
-
-  // Close lightbox function
-  function closeLightbox() {
-    const overlay = document.getElementById('mapLightboxOverlay');
-    const container = document.getElementById('mapLightboxContainer');
-    container.classList.remove('active');
-    setTimeout(() => overlay.classList.remove('active'), 300);
-  }
-
-  // Close lightbox on button click
-  document.getElementById('closeLightbox').addEventListener('click', closeLightbox);
-
-  // Close lightbox on overlay click
-  document.getElementById('mapLightboxOverlay').addEventListener('click', closeLightbox);
-
-  // Close lightbox on ESC key press
-  document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') {
-      closeLightbox();
-    }
-  });
 
   // =============================================================================
   // VIEW REPORT MODAL - POPULATE & MAP DISPLAY
@@ -696,6 +536,8 @@
 
   // Initialize map when view modal is shown
   const viewReportModal = document.getElementById('viewReportModal');
+  let lightboxInitialized = false;
+  
   viewReportModal.addEventListener('shown.bs.modal', function () {
     // Get stored map data
     const mapData = getMapData('viewMap');
@@ -729,6 +571,30 @@
 
     // Fix map display (using our helper)
     refreshMap(lguMap);
+
+    // Initialize map lightbox after modal is shown (button is inside modal)
+    if (!lightboxInitialized) {
+      mapLightbox = initMapLightbox({
+        enlargeButtonId: 'enlargeMapBtn',
+        overlayId: 'mapLightboxOverlay',
+        containerId: 'mapLightboxContainer',
+        enlargedMapId: 'enlargedMap',
+        sourceMap: lguMap,
+        getSourcePosition: function() {
+          const mapData = getMapData('viewMap');
+          return {
+            lat: mapData?.lat || 7.5,
+            lng: mapData?.lng || 125.8,
+            zoom: mapData?.lat ? 15 : 13,
+            hasMarker: !!(mapData && mapData.lat && mapData.lng),
+            markerLat: mapData?.lat,
+            markerLng: mapData?.lng,
+            label: mapData?.label || 'Report Location'
+          };
+        }
+      });
+      lightboxInitialized = true;
+    }
   });
 
   // Remove routing when modal closes (cleanup)
@@ -753,65 +619,59 @@
       return;
     }
 
-    const overlay = document.getElementById('mapLightboxOverlay');
-    const container = document.getElementById('mapLightboxContainer');
+    // Open lightbox using the reusable module
+    if (mapLightbox) {
+      mapLightbox.open();
+    }
 
-    // Show lightbox
-    overlay.classList.add('active');
-    setTimeout(() => container.classList.add('active'), 10);
-
-    // Initialize or update enlarged map with routing
+    // Add routing after lightbox opens
     setTimeout(() => {
-      if (!lguEnlargedMap) {
-        // Create enlarged map (using our helper)
-        lguEnlargedMap = createMap('enlargedMap', mapData.lat, mapData.lng, 13);
-      } else {
+      const enlargedMap = mapLightbox.getEnlargedMap();
+      
+      if (enlargedMap) {
         // Remove existing routing if any
         if (routingControl) {
-          lguEnlargedMap.removeControl(routingControl);
+          enlargedMap.removeControl(routingControl);
           routingControl = null;
         }
-        // Update map view (using our helper)
-        updateMapView(lguEnlargedMap, mapData.lat, mapData.lng, 13);
-        refreshMap(lguEnlargedMap);
+
+        // Create routing control from LGU HQ to report location
+        routingControl = L.Routing.control({
+          waypoints: [
+            L.latLng(lguHqLatLng[0], lguHqLatLng[1]), // LGU headquarters
+            L.latLng(mapData.lat, mapData.lng)         // Report location
+          ],
+          routeWhileDragging: false,
+          showAlternatives: false,
+          addWaypoints: false,
+          lineOptions: {
+            styles: [{ color: '#198754', weight: 5, opacity: 0.7 }] // Green route line
+          },
+          createMarker: function(i, waypoint, n) {
+            // Custom markers for start (LGU HQ) and end (Report)
+            const marker = L.marker(waypoint.latLng, {
+              draggable: false,
+              icon: L.divIcon({
+                className: 'routing-marker',
+                html: i === 0 ? '<i class="bi bi-building" style="font-size: 24px; color: #198754;"></i>' :
+                               '<i class="bi bi-geo-alt-fill" style="font-size: 24px; color: #dc3545;"></i>',
+                iconSize: [30, 30],
+                iconAnchor: [15, 30]
+              })
+            });
+
+            marker.bindPopup(i === 0 ? 'LGU Municipal Hall' : 'Report Location');
+            return marker;
+          }
+        }).addTo(enlargedMap);
+
+        // Fit map to show entire route when routing is calculated
+        routingControl.on('routesfound', function(e) {
+          const bounds = L.latLngBounds([lguHqLatLng, [mapData.lat, mapData.lng]]);
+          enlargedMap.fitBounds(bounds, { padding: [50, 50] });
+        });
       }
-
-      // Create routing control from LGU HQ to report location
-      routingControl = L.Routing.control({
-        waypoints: [
-          L.latLng(lguHqLatLng[0], lguHqLatLng[1]), // LGU headquarters
-          L.latLng(mapData.lat, mapData.lng)         // Report location
-        ],
-        routeWhileDragging: false,
-        showAlternatives: false,
-        addWaypoints: false,
-        lineOptions: {
-          styles: [{ color: '#198754', weight: 5, opacity: 0.7 }] // Green route line
-        },
-        createMarker: function(i, waypoint, n) {
-          // Custom markers for start (LGU HQ) and end (Report)
-          const marker = L.marker(waypoint.latLng, {
-            draggable: false,
-            icon: L.divIcon({
-              className: 'routing-marker',
-              html: i === 0 ? '<i class="bi bi-building" style="font-size: 24px; color: #198754;"></i>' :
-                             '<i class="bi bi-geo-alt-fill" style="font-size: 24px; color: #dc3545;"></i>',
-              iconSize: [30, 30],
-              iconAnchor: [15, 30]
-            })
-          });
-
-          marker.bindPopup(i === 0 ? 'LGU Municipal Hall' : 'Report Location');
-          return marker;
-        }
-      }).addTo(lguEnlargedMap);
-
-      // Fit map to show entire route when routing is calculated
-      routingControl.on('routesfound', function(e) {
-        const bounds = L.latLngBounds([lguHqLatLng, [mapData.lat, mapData.lng]]);
-        lguEnlargedMap.fitBounds(bounds, { padding: [50, 50] });
-      });
-    }, 350);
+    }, 400);
   });
 
   // =============================================================================

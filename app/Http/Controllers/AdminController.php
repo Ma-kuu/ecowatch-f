@@ -212,6 +212,8 @@ class AdminController extends Controller
             'description' => ['required', 'string'],
             'priority' => ['nullable', Rule::in(['low', 'medium', 'high', 'urgent'])],
             'admin_remarks' => ['nullable', 'string', 'max:1000'],
+            'is_hidden' => ['nullable', 'boolean'],
+            'manual_priority' => ['nullable', Rule::in(['normal', 'boosted', 'suppressed'])],
         ]);
 
         $report = \App\Models\Report::findOrFail($id);
@@ -222,6 +224,8 @@ class AdminController extends Controller
             'description' => $validated['description'],
             'priority' => $validated['priority'] ?? 'medium',
             'admin_remarks' => $validated['admin_remarks'],
+            'is_hidden' => $request->boolean('is_hidden'),
+            'manual_priority' => $validated['manual_priority'] ?? 'normal',
         ]);
 
         return redirect()->route('admin-dashboard')
