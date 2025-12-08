@@ -184,6 +184,92 @@ class Report extends Model
     }
 
     /**
+     * Get formatted status display name.
+     */
+    public function getStatusDisplayAttribute(): string
+    {
+        return match($this->status) {
+            'pending' => 'Pending',
+            'in-review' => 'In Review',
+            'in-progress' => 'In Progress',
+            'awaiting-confirmation' => 'Awaiting Confirmation',
+            'resolved' => 'Resolved',
+            'rejected' => 'Rejected',
+            default => ucfirst($this->status),
+        };
+    }
+
+    /**
+     * Get status badge color.
+     */
+    public function getStatusColorAttribute(): string
+    {
+        return match($this->status) {
+            'pending' => 'warning',
+            'in-review' => 'info',
+            'in-progress' => 'primary',
+            'awaiting-confirmation' => 'secondary',
+            'resolved' => 'success',
+            'rejected' => 'danger',
+            default => 'secondary',
+        };
+    }
+
+    /**
+     * Get violation type display name.
+     */
+    public function getViolationTypeDisplayAttribute(): string
+    {
+        return $this->violationType?->name ?? 'Unknown';
+    }
+
+    /**
+     * Get violation type icon.
+     */
+    public function getIconAttribute(): string
+    {
+        return $this->violationType?->icon ?? 'exclamation-circle';
+    }
+
+    /**
+     * Get violation type color.
+     */
+    public function getColorAttribute(): string
+    {
+        return $this->violationType?->color ?? 'secondary';
+    }
+
+    /**
+     * Get reporter name (handles anonymous reports).
+     */
+    public function getReporterNameAttribute(): string
+    {
+        if ($this->is_anonymous) {
+            return 'Anonymous';
+        }
+
+        return $this->reporter?->name ?? $this->reporter_name ?? 'Unknown';
+    }
+
+    /**
+     * Get formatted location string (displays city/municipality).
+     */
+    public function getLocationAttribute(): string
+    {
+        // Display the LGU (city/municipality) name from the barangay relationship
+        if ($this->barangay && $this->barangay->lgu) {
+            return $this->barangay->lgu->name;
+        }
+
+        // Fallback to assigned LGU if available
+        if ($this->assignedLgu) {
+            return $this->assignedLgu->name;
+        }
+
+        return $this->location_address ?? 'Location not specified';
+    }
+
+    /**
      * Auto-assign report to nearest LGU.
      */
     public function autoAssign(): bool

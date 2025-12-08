@@ -12,6 +12,7 @@
 
 @push('styles')
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 @endpush
 
 @section('content')
@@ -95,59 +96,86 @@
   </div>
 
   <!-- Filters and Search -->
-  <div class="row g-3 mb-4">
-    <div class="col-md-3">
-      <select class="form-select" id="typeFilter">
-        <option value="">All Report Types</option>
-        <option value="illegal-dumping">Illegal Dumping</option>
-        <option value="water-pollution">Water Pollution</option>
-        <option value="air-pollution">Air Pollution</option>
-        <option value="deforestation">Deforestation</option>
-        <option value="noise-pollution">Noise Pollution</option>
-        <option value="soil-contamination">Soil Contamination</option>
-        <option value="wildlife-violations">Wildlife Violations</option>
-        <option value="industrial-violations">Industrial Violations</option>
-      </select>
-    </div>
-    <div class="col-md-3">
-      <select class="form-select" id="statusFilter">
-        <option value="">All Status</option>
-        <option value="pending">Pending</option>
-        <option value="in-review">In Review</option>
-        <option value="resolved">Resolved</option>
-      </select>
-    </div>
-    <div class="col-md-6">
-      <div class="input-group">
-        <span class="input-group-text bg-light border-end-0">
-          <i class="bi bi-search text-muted"></i>
-        </span>
-        <input type="text" class="form-control border-start-0" placeholder="Search reports..." id="searchInput">
+  <form method="GET" action="{{ route('admin-dashboard') }}" id="filterForm">
+    <div class="row g-3 mb-4">
+      <div class="col-md-3">
+        <select class="form-select" name="violation_type" id="typeFilter" onchange="document.getElementById('filterForm').submit()">
+          <option value="">All Report Types</option>
+          @foreach(\App\Models\ViolationType::orderBy('name')->get() as $type)
+            <option value="{{ $type->id }}" {{ request('violation_type') == $type->id ? 'selected' : '' }}>
+              {{ $type->name }}
+            </option>
+          @endforeach
+        </select>
+      </div>
+      <div class="col-md-3">
+        <select class="form-select" name="status" id="statusFilter" onchange="document.getElementById('filterForm').submit()">
+          <option value="">All Status</option>
+          <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Pending</option>
+          <option value="in-review" {{ request('status') == 'in-review' ? 'selected' : '' }}>In Review</option>
+          <option value="in-progress" {{ request('status') == 'in-progress' ? 'selected' : '' }}>In Progress</option>
+          <option value="awaiting-confirmation" {{ request('status') == 'awaiting-confirmation' ? 'selected' : '' }}>Awaiting Confirmation</option>
+          <option value="resolved" {{ request('status') == 'resolved' ? 'selected' : '' }}>Resolved</option>
+        </select>
+      </div>
+      <div class="col-md-6">
+        <div class="input-group">
+          <span class="input-group-text bg-light border-end-0">
+            <i class="bi bi-search text-muted"></i>
+          </span>
+          <input type="text" class="form-control border-start-0" placeholder="Search reports..." name="search" id="searchInput" value="{{ request('search') }}">
+          <button type="submit" class="btn btn-primary">Search</button>
+        </div>
       </div>
     </div>
-  </div>
+  </form>
 
   <!-- Reports Management Table -->
   <div class="card shadow-sm border-0 mb-4">
     <div class="card-header bg-white border-bottom py-3">
-      <div class="d-flex justify-content-between align-items-center">
-        <h5 class="fw-bold mb-0">Reports Management</h5>
-        <button class="btn btn-success btn-sm">
-          <i class="bi bi-download me-1"></i>Export CSV
-        </button>
-      </div>
+      <h5 class="fw-bold mb-0">Reports Management</h5>
     </div>
     <div class="card-body p-0">
       <div class="table-responsive">
         <table class="table table-hover mb-0" id="reportsTable">
           <thead class="table-light">
             <tr>
-              <th class="px-4 py-3">Report ID</th>
+              <th class="px-4 py-3">
+                <a href="{{ route('admin-dashboard', [...request()->except(['sort', 'direction']), 'sort' => 'report_id', 'direction' => request('sort') === 'report_id' && request('direction') === 'asc' ? 'desc' : 'asc']) }}"
+                   class="text-decoration-none text-dark d-flex align-items-center">
+                  Report ID
+                  @if(request('sort') === 'report_id')
+                    <i class="bi bi-arrow-{{ request('direction') === 'asc' ? 'up' : 'down' }} ms-1"></i>
+                  @else
+                    <i class="bi bi-arrow-down-up ms-1 text-muted"></i>
+                  @endif
+                </a>
+              </th>
               <th class="py-3">Reporter Name</th>
               <th class="py-3">Type of Violation</th>
-              <th class="py-3">Date Submitted</th>
+              <th class="py-3">
+                <a href="{{ route('admin-dashboard', [...request()->except(['sort', 'direction']), 'sort' => 'created_at', 'direction' => request('sort') === 'created_at' && request('direction') === 'asc' ? 'desc' : 'asc']) }}"
+                   class="text-decoration-none text-dark d-flex align-items-center">
+                  Date Submitted
+                  @if(request('sort') === 'created_at')
+                    <i class="bi bi-arrow-{{ request('direction') === 'asc' ? 'up' : 'down' }} ms-1"></i>
+                  @else
+                    <i class="bi bi-arrow-down-up ms-1 text-muted"></i>
+                  @endif
+                </a>
+              </th>
               <th class="py-3">Location</th>
-              <th class="py-3">Status</th>
+              <th class="py-3">
+                <a href="{{ route('admin-dashboard', [...request()->except(['sort', 'direction']), 'sort' => 'status', 'direction' => request('sort') === 'status' && request('direction') === 'asc' ? 'desc' : 'asc']) }}"
+                   class="text-decoration-none text-dark d-flex align-items-center">
+                  Status
+                  @if(request('sort') === 'status')
+                    <i class="bi bi-arrow-{{ request('direction') === 'asc' ? 'up' : 'down' }} ms-1"></i>
+                  @else
+                    <i class="bi bi-arrow-down-up ms-1 text-muted"></i>
+                  @endif
+                </a>
+              </th>
               <th class="py-3 text-center">Actions</th>
             </tr>
           </thead>
@@ -207,18 +235,12 @@
   <!-- Analytics Section -->
   <div class="row g-4">
     <div class="col-lg-8">
-      <div class="card shadow-sm border-0">
+      <div class="card shadow-sm border-0 h-100">
         <div class="card-header bg-white border-bottom">
           <h5 class="fw-bold mb-0">Reports by Category</h5>
         </div>
-        <div class="card-body">
-          <div class="chart-placeholder">
-            <div class="text-center">
-              <i class="bi bi-bar-chart-fill text-muted" style="font-size: 48px;"></i>
-              <p class="text-muted mt-3">Chart Visualization Placeholder</p>
-              <small class="text-muted">Bar chart showing report distribution by violation type</small>
-            </div>
-          </div>
+        <div class="card-body" style="min-height: 350px;">
+          <canvas id="categoryChart"></canvas>
         </div>
       </div>
     </div>
@@ -320,49 +342,64 @@
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-          <button type="button" class="btn btn-success">
-            <i class="bi bi-download me-1"></i>Download Report
-          </button>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Update Status Modal -->
+  <!-- Validate Report Modal -->
   <div class="modal fade" id="updateStatusModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content">
-        <div class="modal-header">
+        <div class="modal-header bg-light">
           <div>
-            <h5 class="modal-title fw-bold">Update Report Status</h5>
+            <h5 class="modal-title fw-bold">
+              <i class="bi bi-shield-check text-primary me-2"></i>Validate Report
+            </h5>
             <small class="text-muted" id="statusModalReportId"></small>
           </div>
           <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
         </div>
-        <div class="modal-body">
-          <form id="updateStatusForm">
-            <div class="mb-3">
-              <label for="newStatus" class="form-label fw-semibold">New Status</label>
-              <select class="form-select" id="newStatus" required>
-                <option value="">Select new status...</option>
-                <option value="pending">Pending</option>
-                <option value="in-review">In Review</option>
-                <option value="resolved">Resolved</option>
-              </select>
+        <form id="validateReportForm" method="POST">
+          @csrf
+          <div class="modal-body">
+            <div class="alert alert-info">
+              <i class="bi bi-info-circle me-2"></i>
+              <strong>Validation:</strong> Determine if this report is legitimate.
+              <ul class="mb-0 mt-2">
+                <li><strong>Valid:</strong> Report will be assigned to LGU and appear in public feed</li>
+                <li><strong>Invalid:</strong> Report will be hidden from feed</li>
+              </ul>
             </div>
+
             <div class="mb-3">
-              <label for="adminRemarks" class="form-label fw-semibold">Remarks / Action Taken</label>
-              <textarea class="form-control" id="adminRemarks" rows="4" placeholder="Enter remarks or details about actions taken..."></textarea>
-              <small class="text-muted">Provide details about the investigation, actions taken, or resolution.</small>
+              <label class="form-label fw-semibold">Validation Decision</label>
+              <div class="btn-group w-100" role="group">
+                <input type="radio" class="btn-check" name="validity_status" id="validOption" value="valid" required>
+                <label class="btn btn-outline-success" for="validOption">
+                  <i class="bi bi-check-circle me-1"></i>Valid Report
+                </label>
+
+                <input type="radio" class="btn-check" name="validity_status" id="invalidOption" value="invalid" required>
+                <label class="btn btn-outline-danger" for="invalidOption">
+                  <i class="bi bi-x-circle me-1"></i>Invalid Report
+                </label>
+              </div>
             </div>
-          </form>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-          <button type="button" class="btn btn-success">
-            <i class="bi bi-check-circle me-1"></i>Save Changes
-          </button>
-        </div>
+
+            <div class="mb-3">
+              <label for="validationNotes" class="form-label fw-semibold">Notes <span class="text-muted">(Optional)</span></label>
+              <textarea class="form-control" name="notes" id="validationNotes" rows="3" placeholder="Add any notes about your validation decision..."></textarea>
+              <small class="text-muted">Explain why this report is valid or invalid.</small>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn btn-primary">
+              <i class="bi bi-shield-check me-1"></i>Submit Validation
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   </div>
@@ -401,35 +438,104 @@
     }
   }
 
-  // Filter functionality
-  function filterTable() {
-    const searchValue = document.getElementById('searchInput').value.toLowerCase();
-    const statusValue = document.getElementById('statusFilter').value.toLowerCase();
-    const typeValue = document.getElementById('typeFilter').value.toLowerCase();
-    const table = document.getElementById('reportsTable');
-    const rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
+  // Category Horizontal Bar Chart with Unique Colors per Violation
+  const ctx = document.getElementById('categoryChart').getContext('2d');
 
-    for (let i = 0; i < rows.length; i++) {
-      const row = rows[i];
-      const text = row.textContent.toLowerCase();
-      const status = row.getAttribute('data-status');
-      const type = row.getAttribute('data-type');
-
-      let matchesSearch = text.includes(searchValue);
-      let matchesStatus = statusValue === '' || status === statusValue;
-      let matchesType = typeValue === '' || type === typeValue;
-
-      if (matchesSearch && matchesStatus && matchesType) {
-        row.style.display = '';
-      } else {
-        row.style.display = 'none';
-      }
-    }
+  // Helper function to create darker shade of hex color
+  function darkenColor(hex, percent) {
+    const num = parseInt(hex.replace('#', ''), 16);
+    const r = Math.max(0, Math.floor((num >> 16) * (1 - percent)));
+    const g = Math.max(0, Math.floor(((num >> 8) & 0x00FF) * (1 - percent)));
+    const b = Math.max(0, Math.floor((num & 0x0000FF) * (1 - percent)));
+    return '#' + ((r << 16) | (g << 8) | b).toString(16).padStart(6, '0');
   }
 
-  // Event listeners for filters
-  document.getElementById('searchInput').addEventListener('keyup', filterTable);
-  document.getElementById('statusFilter').addEventListener('change', filterTable);
-  document.getElementById('typeFilter').addEventListener('change', filterTable);
+  // Create gradient for each violation type using actual HEX colors from database
+  const colors = {!! json_encode($categoryStats->pluck('color')) !!};
+  const gradients = colors.map(hexColor => {
+    const gradient = ctx.createLinearGradient(0, 0, 500, 0);
+    gradient.addColorStop(0, hexColor);              // Start with original color
+    gradient.addColorStop(1, darkenColor(hexColor, 0.2)); // End with 20% darker shade
+    return gradient;
+  });
+
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: {!! json_encode($categoryStats->pluck('name')) !!},
+      datasets: [{
+        label: 'Reports',
+        data: {!! json_encode($categoryStats->pluck('count')) !!},
+        backgroundColor: gradients,
+        borderRadius: 8,
+        borderSkipped: false,
+      }]
+    },
+    options: {
+      indexAxis: 'y', // Horizontal bars
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          display: false
+        },
+        tooltip: {
+          backgroundColor: 'rgba(0, 0, 0, 0.85)',
+          padding: 14,
+          cornerRadius: 8,
+          titleFont: {
+            size: 15,
+            weight: '600'
+          },
+          bodyFont: {
+            size: 14
+          },
+          displayColors: false,
+          callbacks: {
+            label: function(context) {
+              return context.parsed.x + ' report' + (context.parsed.x !== 1 ? 's' : '');
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          beginAtZero: true,
+          grid: {
+            color: 'rgba(0, 0, 0, 0.04)',
+            drawBorder: false
+          },
+          ticks: {
+            stepSize: 1,
+            precision: 0,
+            font: {
+              size: 12,
+              weight: '500'
+            }
+          },
+          border: {
+            display: false
+          }
+        },
+        y: {
+          grid: {
+            display: false
+          },
+          ticks: {
+            font: {
+              size: 13,
+              weight: '500'
+            },
+            padding: 12,
+            color: '#495057'
+          },
+          border: {
+            display: false
+          }
+        }
+      },
+      barThickness: 28
+    }
+  });
 </script>
 @endpush

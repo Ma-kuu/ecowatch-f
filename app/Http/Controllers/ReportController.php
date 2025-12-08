@@ -46,8 +46,10 @@ class ReportController extends Controller
             'photos.*' => ['image', 'mimes:jpeg,png,jpg,heic', 'max:10240'], // 10MB max
         ]);
 
-        // Generate unique report ID
-        $reportId = 'RPT-' . strtoupper(Str::random(8));
+        // Generate sequential report ID
+        $lastReport = Report::latest('id')->first();
+        $nextNumber = $lastReport ? $lastReport->id + 1 : 1;
+        $reportId = 'RPT-' . str_pad($nextNumber, 3, '0', STR_PAD_LEFT);
 
         // Create the report
         $report = Report::create([
@@ -65,7 +67,7 @@ class ReportController extends Controller
             'longitude' => $validated['longitude'] ?? null,
             'status' => 'pending',
             'is_public' => $validated['is_public'] ?? true,
-            'priority' => 'normal',
+            'priority' => 'low',
         ]);
 
         // Auto-assign to nearest LGU if coordinates provided

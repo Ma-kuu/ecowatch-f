@@ -276,9 +276,6 @@
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-          <button type="button" class="btn btn-success">
-            <i class="bi bi-download me-1"></i>Download Report
-          </button>
           <button type="button" class="btn btn-danger me-2">
             <i class="bi bi-x-circle me-1"></i>Not Resolved
           </button>

@@ -4,6 +4,8 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\AnonymousReportController;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\AdminController;
 use Illuminate\Support\Facades\Route;
 
 // Public Pages
@@ -63,39 +65,29 @@ Route::post('/logout', [LoginController::class, 'logout'])->name('logout')->midd
 
 // Dashboard Routes (protected with auth middleware)
 Route::middleware('auth')->group(function () {
-    Route::get('/user-dashboard', function () {
-        return view('auth.user-dashboard', [
-            'userReports' => collect([]), // Empty collection for now
-            'totalUserReports' => 0,
-            'pendingCount' => 0,
-        ]);
-    })->name('user-dashboard');
+    Route::get('/user-dashboard', [DashboardController::class, 'userDashboard'])
+        ->name('user-dashboard');
 
-    Route::get('/admin-dashboard', function () {
-        return view('auth.admin-dashboard', [
-            'reports' => collect([]), // Empty collection for now
-            'totalReports' => 0,
-            'pendingReports' => 0,
-            'inReviewReports' => 0,
-            'resolvedReports' => 0,
-        ]);
-    })->name('admin-dashboard');
+    Route::get('/admin-dashboard', [DashboardController::class, 'adminDashboard'])
+        ->name('admin-dashboard');
 
-    Route::get('/lgu-dashboard', function () {
-        return view('auth.lgu-dashboard', [
-            'lguReports' => collect([]), // Empty collection for now
-            'totalAssigned' => 0,
-            'pendingAssigned' => 0,
-            'inProgressAssigned' => 0,
-            'fixedAssigned' => 0,
-            'verifiedAssigned' => 0,
-        ]);
-    })->name('lgu-dashboard');
+    Route::get('/lgu-dashboard', [DashboardController::class, 'lguDashboard'])
+        ->name('lgu-dashboard');
 
-    Route::get('/admin-settings', function () {
-        return view('auth.admin-settings', [
-            'users' => collect([]), // Empty collection for now
-            'totalUsers' => 0,
-        ]);
-    })->name('admin-settings');
+    // Admin Settings Routes
+    Route::get('/admin-settings', [AdminController::class, 'settings'])
+        ->name('admin-settings');
+
+    Route::post('/admin/users', [AdminController::class, 'createUser'])
+        ->name('admin.users.create');
+
+    Route::post('/admin/users/{id}/toggle-status', [AdminController::class, 'toggleUserStatus'])
+        ->name('admin.users.toggle-status');
+
+    Route::delete('/admin/users/{id}', [AdminController::class, 'deleteUser'])
+        ->name('admin.users.delete');
+
+    // Admin Report Validation Route
+    Route::post('/admin/reports/{id}/validate', [AdminController::class, 'validateReport'])
+        ->name('admin.reports.validate');
 });

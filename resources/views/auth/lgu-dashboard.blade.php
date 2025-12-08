@@ -6,6 +6,11 @@
 
 @section('footer-title', 'EcoWatch')
 
+@push('styles')
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css" />
+@endpush
+
 @section('additional-styles')
   #viewMap {
     height: 300px;
@@ -18,8 +23,8 @@
   <!-- Page Header -->
   <div class="row mb-4">
     <div class="col-12">
-      <h2 class="fw-bold" style="color: #198754;">LGU Dashboard - Panabo City</h2>
-      <p class="text-muted">Monitor and manage environmental reports in Panabo City, Davao del Norte</p>
+      <h2 class="fw-bold" style="color: #198754;">LGU Dashboard - {{ $lgu->name ?? 'LGU' }}</h2>
+      <p class="text-muted">Monitor and manage environmental reports in {{ $lgu->name ?? 'your municipality' }}, {{ $lgu->province ?? 'Davao del Norte' }}</p>
     </div>
   </div>
 
@@ -38,7 +43,7 @@
               <i class="bi bi-clipboard-data text-secondary" style="font-size: 24px;"></i>
             </div>
           </div>
-          <p class="text-muted small mb-0 mt-2">Total in Panabo City</p>
+          <p class="text-muted small mb-0 mt-2">Total in {{ $lgu->name ?? 'your area' }}</p>
         </div>
       </div>
     </div>
@@ -153,23 +158,48 @@
   <!-- Reports Management Table -->
   <div class="card shadow-sm border-0 mb-4">
     <div class="card-header bg-white border-bottom py-3">
-      <div class="d-flex justify-content-between align-items-center">
-        <h5 class="fw-bold mb-0">Assigned Reports</h5>
-        <button class="btn btn-success btn-sm">
-          <i class="bi bi-download me-1"></i>Export CSV
-        </button>
-      </div>
+      <h5 class="fw-bold mb-0">Assigned Reports</h5>
     </div>
     <div class="card-body p-0">
       <div class="table-responsive">
         <table class="table table-hover mb-0" id="reportsTable">
           <thead class="table-light">
             <tr>
-              <th class="px-4 py-3">Report ID</th>
+              <th class="px-4 py-3">
+                <a href="{{ route('lgu-dashboard', [...request()->except(['sort', 'direction']), 'sort' => 'report_id', 'direction' => request('sort') === 'report_id' && request('direction') === 'asc' ? 'desc' : 'asc']) }}"
+                   class="text-decoration-none text-dark d-flex align-items-center">
+                  Report ID
+                  @if(request('sort') === 'report_id')
+                    <i class="bi bi-arrow-{{ request('direction') === 'asc' ? 'up' : 'down' }} ms-1"></i>
+                  @else
+                    <i class="bi bi-arrow-down-up ms-1 text-muted"></i>
+                  @endif
+                </a>
+              </th>
               <th class="py-3">Type of Violation</th>
-              <th class="py-3">Date Received</th>
+              <th class="py-3">
+                <a href="{{ route('lgu-dashboard', [...request()->except(['sort', 'direction']), 'sort' => 'created_at', 'direction' => request('sort') === 'created_at' && request('direction') === 'asc' ? 'desc' : 'asc']) }}"
+                   class="text-decoration-none text-dark d-flex align-items-center">
+                  Date Received
+                  @if(request('sort') === 'created_at')
+                    <i class="bi bi-arrow-{{ request('direction') === 'asc' ? 'up' : 'down' }} ms-1"></i>
+                  @else
+                    <i class="bi bi-arrow-down-up ms-1 text-muted"></i>
+                  @endif
+                </a>
+              </th>
               <th class="py-3">Location</th>
-              <th class="py-3">Status</th>
+              <th class="py-3">
+                <a href="{{ route('lgu-dashboard', [...request()->except(['sort', 'direction']), 'sort' => 'status', 'direction' => request('sort') === 'status' && request('direction') === 'asc' ? 'desc' : 'asc']) }}"
+                   class="text-decoration-none text-dark d-flex align-items-center">
+                  Status
+                  @if(request('sort') === 'status')
+                    <i class="bi bi-arrow-{{ request('direction') === 'asc' ? 'up' : 'down' }} ms-1"></i>
+                  @else
+                    <i class="bi bi-arrow-down-up ms-1 text-muted"></i>
+                  @endif
+                </a>
+              </th>
               <th class="py-3 text-center">Actions</th>
             </tr>
           </thead>
@@ -302,6 +332,9 @@
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+          <button type="button" class="btn btn-primary" id="btnShowDirections">
+            <i class="bi bi-signpost-2"></i> Show Directions
+          </button>
           <button type="button" class="btn btn-success" data-bs-dismiss="modal" data-bs-toggle="modal" data-bs-target="#markFixedModal">
             <i class="bi bi-check2"></i> Mark as Fixed
           </button>
@@ -419,5 +452,86 @@
   document.getElementById('searchInput').addEventListener('keyup', filterTable);
   document.getElementById('statusFilter').addEventListener('change', filterTable);
   document.getElementById('typeFilter').addEventListener('change', filterTable);
+</script>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"></script>
+<script>
+  let viewMap = null;
+  let routingControl = null;
+  const lguHqLatLng = [{{ $lgu->latitude ?? 0 }}, {{ $lgu->longitude ?? 0 }}];
+
+  // Initialize map when modal opens
+  const viewReportModal = document.getElementById('viewReportModal');
+  viewReportModal.addEventListener('shown.bs.modal', function () {
+    if (!viewMap) {
+      viewMap = L.map('viewMap').setView([7.5, 125.8], 13);
+
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors'
+      }).addTo(viewMap);
+    }
+
+    setTimeout(() => viewMap.invalidateSize(), 100);
+  });
+
+  // Remove routing when modal closes
+  viewReportModal.addEventListener('hidden.bs.modal', function () {
+    if (routingControl) {
+      viewMap.removeControl(routingControl);
+      routingControl = null;
+    }
+  });
+
+  // Show directions button handler
+  document.getElementById('btnShowDirections').addEventListener('click', function() {
+    const reportLat = parseFloat(document.getElementById('viewMap').dataset.lat);
+    const reportLng = parseFloat(document.getElementById('viewMap').dataset.lng);
+
+    if (!reportLat || !reportLng) {
+      alert('Report location coordinates not available');
+      return;
+    }
+
+    // Remove existing routing control if any
+    if (routingControl) {
+      viewMap.removeControl(routingControl);
+    }
+
+    // Create routing control
+    routingControl = L.Routing.control({
+      waypoints: [
+        L.latLng(lguHqLatLng[0], lguHqLatLng[1]),
+        L.latLng(reportLat, reportLng)
+      ],
+      routeWhileDragging: false,
+      showAlternatives: false,
+      addWaypoints: false,
+      lineOptions: {
+        styles: [{ color: '#198754', weight: 5, opacity: 0.7 }]
+      },
+      createMarker: function(i, waypoint, n) {
+        const marker = L.marker(waypoint.latLng, {
+          draggable: false,
+          icon: L.divIcon({
+            className: 'routing-marker',
+            html: i === 0 ? '<i class="bi bi-building" style="font-size: 24px; color: #198754;"></i>' :
+                           '<i class="bi bi-geo-alt-fill" style="font-size: 24px; color: #dc3545;"></i>',
+            iconSize: [30, 30],
+            iconAnchor: [15, 30]
+          })
+        });
+
+        marker.bindPopup(i === 0 ? 'LGU Municipal Hall' : 'Report Location');
+        return marker;
+      }
+    }).addTo(viewMap);
+
+    // Fit map to show entire route
+    routingControl.on('routesfound', function(e) {
+      const bounds = L.latLngBounds([lguHqLatLng, [reportLat, reportLng]]);
+      viewMap.fitBounds(bounds, { padding: [50, 50] });
+    });
+  });
 </script>
 @endpush
