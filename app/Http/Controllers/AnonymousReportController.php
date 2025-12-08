@@ -112,10 +112,11 @@ class AnonymousReportController extends Controller
 
                 Photo::create([
                     'report_id' => $report->id,
-                    'filename' => basename($path),
-                    'path' => $path,
+                    'file_name' => basename($path),
+                    'file_path' => $path,
+                    'file_size' => $photo->getSize(),
                     'mime_type' => $photo->getMimeType(),
-                    'size' => $photo->getSize(),
+                    'is_primary' => true,
                 ]);
             }
 

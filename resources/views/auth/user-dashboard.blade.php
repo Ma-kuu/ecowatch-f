@@ -180,7 +180,10 @@
                         data-status="{{ $report->status_display }}"
                         data-status-raw="{{ $report->status }}"
                         data-violation="{{ $report->violation_type_display }}"
-                        data-created="{{ $report->created_at->format('M d, Y') }}">
+                        data-created="{{ $report->created_at->format('M d, Y') }}"
+                        data-photo="{{ $report->photos?->where('is_primary', true)->first()?->file_path ? asset('storage/' . $report->photos?->where('is_primary', true)->first()?->file_path) : ($report->photos?->first()?->file_path ? asset('storage/' . $report->photos?->first()?->file_path) : '') }}"
+                        data-remarks="{{ $report->remarks ?? 'No remarks' }}"
+                        data-resolution-proof="{{ $report->photos?->where('is_primary', false)->first()?->file_path ? asset('storage/' . $report->photos?->where('is_primary', false)->first()?->file_path) : '' }}">
                   <i class="bi bi-eye me-1"></i>View
                 </button>
               </td>
@@ -373,9 +376,50 @@
       const reportCode = this.dataset.reportCode;
       const reportId = this.dataset.reportId;
       const statusRaw = this.dataset.statusRaw;
+      const description = this.dataset.description;
+      const violation = this.dataset.violation;
+      const location = this.dataset.location;
+      const created = this.dataset.created;
+      const status = this.dataset.status;
+      const photo = this.dataset.photo;
+      const remarks = this.dataset.remarks;
+      const resolutionProof = this.dataset.resolutionProof;
 
       // Store current report ID for confirm/reject buttons
       currentReportId = reportId;
+
+      // Populate modal fields
+      document.getElementById('modalReportId').textContent = reportCode;
+      document.getElementById('modalDescription').textContent = description;
+      document.getElementById('modalViolationType').textContent = violation;
+      document.getElementById('modalLocation').textContent = location;
+      document.getElementById('modalSubmittedDate').textContent = created;
+      document.getElementById('modalStatus').textContent = status;
+      document.getElementById('modalRemarks').textContent = remarks;
+
+      // Handle photo evidence
+      const photoElement = document.getElementById('modalPhotoEvidence');
+      const photoSection = photoElement.closest('.col-12');
+      if (photo && photo.trim() !== '') {
+        photoElement.src = photo;
+        photoElement.style.display = 'block';
+        photoSection.style.display = 'block';
+      } else {
+        photoElement.style.display = 'none';
+        photoSection.style.display = 'none';
+      }
+
+      // Handle resolution proof photo
+      const resolutionProofElement = document.getElementById('modalResolutionProof');
+      const resolutionProofSection = resolutionProofElement.closest('.col-12');
+      if (resolutionProof && resolutionProof.trim() !== '') {
+        resolutionProofElement.src = resolutionProof;
+        resolutionProofElement.style.display = 'block';
+        resolutionProofSection.style.display = 'block';
+      } else {
+        resolutionProofElement.style.display = 'none';
+        resolutionProofSection.style.display = 'none';
+      }
 
       // Show/hide confirmation buttons based on status
       const confirmationButtons = document.getElementById('confirmationButtons');

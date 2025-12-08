@@ -344,7 +344,8 @@
                         data-status-color="{{ $report->status_color }}"
                         data-violation="{{ $report->violation_type_display }}"
                         data-created="{{ $report->created_at->format('M d, Y') }}"
-                        data-reporter="{{ $report->is_anonymous ? 'Anonymous' : ($report->reporter?->name ?? 'N/A') }}">
+                        data-reporter="{{ $report->is_anonymous ? 'Anonymous' : ($report->reporter?->name ?? 'N/A') }}"
+                        data-photo="{{ $report->photos->first() ? asset('storage/' . $report->photos->first()->file_path) : '' }}">
                   <i class="bi bi-eye"></i>
                 </button>
                 <button class="btn btn-sm btn-outline-success"
@@ -680,6 +681,16 @@
       const statusBadge = document.getElementById('modalStatus');
       statusBadge.textContent = this.dataset.status;
       statusBadge.className = `badge bg-${this.dataset.statusColor}`;
+
+      // Handle photo display
+      const photo = this.dataset.photo;
+      const photoEvidence = document.getElementById('modalPhotoEvidence');
+      if (photo && photo !== '') {
+        photoEvidence.src = photo;
+        photoEvidence.style.display = 'block';
+      } else {
+        photoEvidence.style.display = 'none';
+      }
     });
   });
 

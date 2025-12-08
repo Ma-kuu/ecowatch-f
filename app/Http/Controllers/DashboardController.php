@@ -18,7 +18,7 @@ class DashboardController extends Controller
 
         // Get base query for user's reports
         $query = Report::where('user_id', $user->id)
-            ->with(['violationType', 'barangay.lgu', 'validity']);
+            ->with(['violationType', 'barangay.lgu', 'validity', 'photos']);
 
         // Apply search filter
         if ($search = $request->input('search')) {
@@ -83,7 +83,7 @@ class DashboardController extends Controller
     public function adminDashboard(Request $request)
     {
         // Get base query with relationships
-        $query = Report::with(['reporter', 'violationType', 'barangay.lgu', 'assignedLgu', 'validity']);
+        $query = Report::with(['reporter', 'violationType', 'barangay.lgu', 'assignedLgu', 'validity', 'photos']);
 
         // Apply search filter
         if ($search = $request->input('search')) {
@@ -166,7 +166,7 @@ class DashboardController extends Controller
 
         // Get base query for LGU's reports
         $query = Report::forLgu($lgu->id)
-            ->with(['reporter', 'violationType', 'barangay', 'validity']);
+            ->with(['reporter', 'violationType', 'barangay', 'validity', 'photos']);
 
         // Apply search filter
         if ($search = $request->input('search')) {
@@ -225,9 +225,24 @@ class DashboardController extends Controller
         $report = Report::findOrFail($id);
         $user = Auth::user();
 
-        // Verify user belongs to the assigned LGU
-        if (!$user->lgu || $user->lgu->id !== $report->assigned_lgu_id) {
+        // Verify user belongs to the LGU (either assigned OR report is in their barangay)
+        if (!$user->lgu) {
+            abort(403, 'User is not assigned to an LGU');
+        }
+        
+        $isAssignedToLgu = $report->assigned_lgu_id === $user->lgu->id;
+        $isInLguBarangay = $report->barangay && $report->barangay->lgu_id === $user->lgu->id;
+        
+        if (!$isAssignedToLgu && !$isInLguBarangay) {
             abort(403, 'Unauthorized to update this report');
+        }
+        
+        // Auto-assign the report to this LGU if not already assigned
+        if (!$report->assigned_lgu_id) {
+            $report->update([
+                'assigned_lgu_id' => $user->lgu->id,
+                'assigned_at' => now(),
+            ]);
         }
 
         // Validate input

@@ -5,6 +5,7 @@
 @push('styles')
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet.fullscreen@2.4.0/Control.FullScreen.css" />
 <style>
   body {
     background: #f4f6f8;
@@ -126,10 +127,11 @@
 @push('scripts')
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
+<script src="https://unpkg.com/leaflet.fullscreen@2.4.0/Control.FullScreen.js"></script>
 <script src="{{ asset('js/location-dropdowns.js') }}"></script>
 <script>
   // Map Setup
-  const map = L.map('map').setView([7.1907, 125.4553], 13);
+  const map = L.map('map', { fullscreenControl: true }).setView([7.1907, 125.4553], 13);
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
   let marker;
   
@@ -254,11 +256,24 @@
 
     // Create FormData for file upload
     const formData = new FormData(this);
+    
+    // Ensure CSRF token is in FormData
+    if (!formData.has('_token')) {
+      const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+      if (csrfToken) {
+        formData.append('_token', csrfToken);
+      }
+    }
 
     // AJAX submission with better error handling
     fetch('{{ route("report.store") }}', {
       method: 'POST',
-      body: formData
+      body: formData,
+      credentials: 'same-origin',
+      headers: {
+        'Accept': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest'
+      }
     })
     .then(response => {
       // Check if response is JSON

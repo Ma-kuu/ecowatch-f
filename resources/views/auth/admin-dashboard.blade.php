@@ -227,7 +227,15 @@
                         data-report-id="{{ $report->id }}"
                         data-report-code="{{ $report->report_id }}"
                         data-lat="{{ $report->latitude }}"
-                        data-lng="{{ $report->longitude }}">
+                        data-lng="{{ $report->longitude }}"
+                        data-description="{{ $report->description }}"
+                        data-violation-type="{{ $report->violationType->name ?? 'N/A' }}"
+                        data-location="{{ $report->location }}"
+                        data-reporter="{{ $report->reporter_name ?? ($report->reporter->name ?? 'Anonymous') }}"
+                        data-date="{{ $report->created_at->format('M d, Y') }}"
+                        data-status="{{ $report->status_display }}"
+                        data-status-color="{{ $report->status_color }}"
+                        data-photo="{{ $report->photos->first() ? asset('storage/' . $report->photos->first()->file_path) : '' }}">
                   <i class="bi bi-eye"></i>
                 </button>
                 @if($report->is_anonymous && (!$report->validity || $report->validity->status === 'pending'))
@@ -594,6 +602,33 @@
       const lat = parseFloat(this.dataset.lat);
       const lng = parseFloat(this.dataset.lng);
       const reportCode = this.dataset.reportCode;
+      const description = this.dataset.description;
+      const violationType = this.dataset.violationType;
+      const location = this.dataset.location;
+      const reporter = this.dataset.reporter;
+      const date = this.dataset.date;
+      const status = this.dataset.status;
+      const statusColor = this.dataset.statusColor;
+      const photo = this.dataset.photo;
+
+      // Populate modal fields
+      document.getElementById('modalViolationType').textContent = violationType;
+      document.getElementById('modalDescription').textContent = description;
+      document.getElementById('modalLocation').textContent = location;
+      document.getElementById('modalReporterName').textContent = reporter;
+      document.getElementById('modalDateSubmitted').textContent = date;
+      document.getElementById('modalStatus').textContent = status;
+      document.getElementById('modalStatus').className = 'badge bg-' + statusColor;
+
+      // Handle photo display
+      const photoSection = document.getElementById('photoSection');
+      const modalPhoto = document.getElementById('modalPhoto');
+      if (photo && photo !== '') {
+        modalPhoto.src = photo;
+        photoSection.style.display = 'block';
+      } else {
+        photoSection.style.display = 'none';
+      }
 
       // Store coordinates using our map helper
       storeMapData('viewMap', lat, lng, reportCode);

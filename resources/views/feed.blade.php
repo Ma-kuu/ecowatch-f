@@ -3,7 +3,8 @@
 @section('title', 'EcoWatch — Feed')
 
 @push('styles')
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css"/>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<link rel="stylesheet" href="https://unpkg.com/leaflet.fullscreen@2.4.0/Control.FullScreen.css" />
 <style>
   body {
     background: #f4f6f8;
@@ -127,12 +128,13 @@
 @endsection
 
 @push('scripts')
-<script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet.fullscreen@2.4.0/Control.FullScreen.js"></script>
 <script>
   // Initialize maps for each report
   @foreach($feedReports ?? [] as $report)
   @if($report->latitude && $report->longitude)
-  const map{{ $report->id }} = L.map('map{{ $report->id }}').setView([{{ $report->latitude }}, {{ $report->longitude }}], 13);
+  const map{{ $report->id }} = L.map('map{{ $report->id }}', { fullscreenControl: true }).setView([{{ $report->latitude }}, {{ $report->longitude }}], 13);
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map{{ $report->id }});
   L.marker([{{ $report->latitude }}, {{ $report->longitude }}]).addTo(map{{ $report->id }});
   @endif

@@ -146,10 +146,16 @@ class Report extends Model
 
     /**
      * Scope to filter reports for a specific LGU.
+     * Shows reports that are either assigned to the LGU OR in the LGU's barangays.
      */
     public function scopeForLgu($query, int $lguId)
     {
-        return $query->where('assigned_lgu_id', $lguId);
+        return $query->where(function($q) use ($lguId) {
+            $q->where('assigned_lgu_id', $lguId)
+              ->orWhereHas('barangay', function($q2) use ($lguId) {
+                  $q2->where('lgu_id', $lguId);
+              });
+        });
     }
 
     /**

@@ -109,7 +109,7 @@ Route::middleware('auth')->group(function () {
 // ============================================================================
 // USER ROUTES (Authenticated Users)
 // ============================================================================
-Route::middleware(['auth', 'role:user'])->group(function () {
+Route::middleware(['auth'])->group(function () {
     // User Confirmation Routes
     Route::post('/user/reports/{id}/confirm', [UserController::class, 'confirmReportResolved'])
         ->name('user.reports.confirm');

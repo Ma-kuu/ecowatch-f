@@ -105,10 +105,12 @@ class ReportController extends Controller
 
                 Photo::create([
                     'report_id' => $report->id,
-                    'filename' => basename($path),
-                    'path' => $path,
+                    'file_name' => basename($path),
+                    'file_path' => $path,
+                    'file_size' => $photo->getSize(),
                     'mime_type' => $photo->getMimeType(),
-                    'size' => $photo->getSize(),
+                    'is_primary' => true,
+                    'uploaded_by' => Auth::id(),
                 ]);
             }
 
@@ -117,7 +119,7 @@ class ReportController extends Controller
                 'success' => true,
                 'message' => 'Report submitted successfully! Your report ID is: ' . $reportId,
                 'report_id' => $reportId,
-                'redirect' => route('user.dashboard')
+                'redirect' => route('user-dashboard')
             ]);
         } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json([
