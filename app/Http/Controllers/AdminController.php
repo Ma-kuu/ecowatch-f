@@ -139,7 +139,7 @@ class AdminController extends Controller
     }
 
     /**
-     * Validate a report (mark as valid or invalid).
+     * Validate a report (mark as valid or invalid) - ONLY for anonymous reports.
      */
     public function validateReport(Request $request, $id)
     {
@@ -148,7 +148,13 @@ class AdminController extends Controller
             'notes' => ['nullable', 'string', 'max:1000'],
         ]);
 
-        $report = \App\Models\Report::findOrFail($id);
+        $report = \App\Models\Report::with('barangay.lgu')->findOrFail($id);
+
+        // Only allow validation for anonymous reports
+        if (!$report->is_anonymous) {
+            return redirect()->route('admin-dashboard')
+                ->with('error', 'Only anonymous reports can be validated. Regular reports are automatically verified.');
+        }
 
         // Update or create report validity record
         $validity = $report->validity()->updateOrCreate(
@@ -161,26 +167,85 @@ class AdminController extends Controller
             ]
         );
 
-        // If marked as invalid, hide from public feed
+        // If marked as invalid, hide from public feed (keep anonymous)
         if ($validated['validity_status'] === 'invalid') {
-            $report->update(['is_public' => false]);
+            $report->update([
+                'is_public' => false,
+                'is_anonymous' => true, // Explicitly preserve anonymous flag
+            ]);
 
             return redirect()->route('admin-dashboard')
-                ->with('success', 'Report marked as invalid and hidden from feed.');
+                ->with('success', 'Anonymous report marked as invalid and hidden from feed.');
         }
 
-        // If marked as valid, make public and auto-assign to LGU
+        // If marked as valid, make public and auto-assign to LGU (keep anonymous)
         $report->update([
             'is_public' => true,
             'status' => 'in-review',
+            'is_anonymous' => true, // Explicitly preserve anonymous flag
         ]);
 
-        // Auto-assign to nearest LGU if coordinates exist
-        if ($report->latitude && $report->longitude) {
+        // Always reassign to correct LGU based on barangay during validation
+        // (this ensures reports are assigned to the correct LGU even if auto-assigned incorrectly)
+        if ($report->barangay_id && $report->barangay?->lgu_id) {
+            $report->update([
+                'assigned_lgu_id' => $report->barangay->lgu_id,
+                'assigned_at' => now(),
+            ]);
+        }
+        // If no barangay, try auto-assign by coordinates
+        elseif ($report->latitude && $report->longitude) {
             $report->autoAssign();
         }
 
         return redirect()->route('admin-dashboard')
-            ->with('success', 'Report validated and assigned to LGU successfully.');
+            ->with('success', 'Anonymous report validated and assigned to LGU successfully.');
+    }
+
+    /**
+     * Update a report (admin editing).
+     */
+    public function updateReport(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'status' => ['required', Rule::in(['pending', 'in-review', 'in-progress', 'awaiting-confirmation', 'resolved'])],
+            'description' => ['required', 'string'],
+            'priority' => ['nullable', Rule::in(['low', 'medium', 'high', 'urgent'])],
+            'admin_remarks' => ['nullable', 'string', 'max:1000'],
+        ]);
+
+        $report = \App\Models\Report::findOrFail($id);
+
+        // Update report fields
+        $report->update([
+            'status' => $validated['status'],
+            'description' => $validated['description'],
+            'priority' => $validated['priority'] ?? 'medium',
+            'admin_remarks' => $validated['admin_remarks'],
+        ]);
+
+        return redirect()->route('admin-dashboard')
+            ->with('success', "Report {$report->report_id} has been updated successfully.");
+    }
+
+    /**
+     * Delete a report (permanent deletion).
+     */
+    public function deleteReport($id)
+    {
+        $report = \App\Models\Report::findOrFail($id);
+
+        // Store report ID for success message
+        $reportId = $report->report_id;
+
+        // Delete associated records first (cascade delete should handle this, but being explicit)
+        $report->validity()->delete();
+        $report->updates()->delete();
+
+        // Permanently delete the report (bypass soft delete)
+        $report->forceDelete();
+
+        return redirect()->route('admin-dashboard')
+            ->with('success', "Report {$reportId} has been permanently deleted.");
     }
 }

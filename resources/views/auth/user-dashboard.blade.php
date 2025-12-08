@@ -10,6 +10,11 @@
 
 @section('footer-title', 'EcoWatch')
 
+@push('styles')
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet.fullscreen@2.4.0/Control.FullScreen.css" />
+@endpush
+
 @section('additional-styles')
   #map {
     height: 300px;
@@ -163,7 +168,19 @@
                 <small class="text-muted">{{ $report->remarks ?? 'No remarks' }}</small>
               </td>
               <td class="py-3 text-center table-actions">
-                <button class="btn btn-sm btn-outline-success" data-bs-toggle="modal" data-bs-target="#reportDetailsModal">
+                <button class="btn btn-sm btn-outline-success"
+                        data-bs-toggle="modal"
+                        data-bs-target="#reportDetailsModal"
+                        data-report-id="{{ $report->id }}"
+                        data-report-code="{{ $report->report_id }}"
+                        data-description="{{ $report->description }}"
+                        data-location="{{ $report->location }}"
+                        data-lat="{{ $report->latitude }}"
+                        data-lng="{{ $report->longitude }}"
+                        data-status="{{ $report->status_display }}"
+                        data-status-raw="{{ $report->status }}"
+                        data-violation="{{ $report->violation_type_display }}"
+                        data-created="{{ $report->created_at->format('M d, Y') }}">
                   <i class="bi bi-eye me-1"></i>View
                 </button>
               </td>
@@ -276,66 +293,207 @@
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-          <button type="button" class="btn btn-danger me-2">
-            <i class="bi bi-x-circle me-1"></i>Not Resolved
-          </button>
-          <button type="button" class="btn btn-success">
-            <i class="bi bi-check-circle me-1"></i>Confirm Resolved
-          </button>
+
+          <!-- Show confirm/reject buttons only for awaiting-confirmation reports -->
+          <div id="confirmationButtons" style="display: none;">
+            <button type="button" class="btn btn-danger me-2" id="btnRejectResolution">
+              <i class="bi bi-x-circle me-1"></i>Not Resolved
+            </button>
+            <button type="button" class="btn btn-success" id="btnConfirmResolution">
+              <i class="bi bi-check-circle me-1"></i>Confirm Resolved
+            </button>
+          </div>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Rejection Reason Modal -->
+  <div class="modal fade" id="rejectionReasonModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title fw-bold">Why is this not resolved?</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <form id="rejectionForm" method="POST">
+          @csrf
+          <div class="modal-body">
+            <p class="text-muted mb-3">Please explain why the issue hasn't been resolved. This feedback will help the LGU address the problem properly.</p>
+
+            <div class="mb-3">
+              <label for="rejectionReason" class="form-label">Reason <span class="text-danger">*</span></label>
+              <textarea
+                class="form-control"
+                id="rejectionReason"
+                name="rejection_reason"
+                rows="4"
+                placeholder="Example: The garbage is still there, only partially cleaned..."
+                required
+                minlength="10"
+                maxlength="500"></textarea>
+              <div class="form-text">Minimum 10 characters, maximum 500 characters</div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn btn-danger">
+              <i class="bi bi-send me-1"></i>Submit Feedback
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   </div>
 @endsection
 
 @push('scripts')
+<!-- Load Leaflet library -->
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet.fullscreen@2.4.0/Control.FullScreen.js"></script>
+
+<!-- Load our helper modules -->
+<script src="{{ asset('js/table-filter.js') }}"></script>
+<script src="{{ asset('js/map-helper.js') }}"></script>
 
 <script>
-  let map;
-  let marker;
+  // Map variables
+  let userMap = null;
+  let userMarker = null;
+
+  // Variable to store current report ID for confirm/reject actions
+  let currentReportId = null;
+
+  // Handle View Report button clicks
+  // Store the report coordinates so we can use them when modal opens
+  document.querySelectorAll('[data-bs-target="#reportDetailsModal"]').forEach(button => {
+    button.addEventListener('click', function() {
+      const lat = parseFloat(this.dataset.lat);
+      const lng = parseFloat(this.dataset.lng);
+      const reportCode = this.dataset.reportCode;
+      const reportId = this.dataset.reportId;
+      const statusRaw = this.dataset.statusRaw;
+
+      // Store current report ID for confirm/reject buttons
+      currentReportId = reportId;
+
+      // Show/hide confirmation buttons based on status
+      const confirmationButtons = document.getElementById('confirmationButtons');
+      if (statusRaw === 'awaiting-confirmation') {
+        confirmationButtons.style.display = 'block';
+      } else {
+        confirmationButtons.style.display = 'none';
+      }
+
+      // Store coordinates using our map helper
+      storeMapData('map', lat, lng, reportCode);
+    });
+  });
 
   // Initialize map when modal is shown
   document.getElementById('reportDetailsModal').addEventListener('shown.bs.modal', function () {
-    if (!map) {
-      map = L.map('map').setView([12.8797, 121.7740], 6);
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-      }).addTo(map);
+    // Get the stored map data
+    const mapData = getMapData('map');
 
-      marker = L.marker([12.8797, 121.7740]).addTo(map);
+    if (!userMap) {
+      // Create map first time modal opens (using our helper function)
+      userMap = createMap('map', 12.8797, 121.7740, 6);
+
+      // Add fullscreen control
+      L.control.fullscreen({
+        position: 'topleft'
+      }).addTo(userMap);
     }
-    setTimeout(function() {
-      map.invalidateSize();
-    }, 100);
-  });
 
-  // Filter functionality
-  function filterTable() {
-    const searchValue = document.getElementById('searchInput').value.toLowerCase();
-    const statusValue = document.getElementById('statusFilter').value.toLowerCase();
-    const table = document.getElementById('reportsTable');
-    const rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
+    // If we have coordinates, show them on the map
+    if (mapData && mapData.lat && mapData.lng) {
+      // Update map view to report location
+      updateMapView(userMap, mapData.lat, mapData.lng, 15);
 
-    for (let i = 0; i < rows.length; i++) {
-      const row = rows[i];
-      const text = row.textContent.toLowerCase();
-      const status = row.getAttribute('data-status');
+      // Remove old marker if exists
+      if (userMarker) {
+        removeMarker(userMap, userMarker);
+      }
 
-      let matchesSearch = text.includes(searchValue);
-      let matchesStatus = statusValue === '' || status === statusValue;
+      // Add new marker at report location
+      userMarker = addMarker(userMap, mapData.lat, mapData.lng, mapData.label || 'Report Location');
 
-      if (matchesSearch && matchesStatus) {
-        row.style.display = '';
-      } else {
-        row.style.display = 'none';
+      // Open the popup
+      if (userMarker) {
+        userMarker.openPopup();
       }
     }
-  }
 
-  // Event listeners
-  document.getElementById('searchInput').addEventListener('keyup', filterTable);
-  document.getElementById('statusFilter').addEventListener('change', filterTable);
+    // Fix map display (important for maps in modals)
+    refreshMap(userMap);
+  });
+
+  // =============================================================================
+  // USER CONFIRMATION FUNCTIONALITY
+  // =============================================================================
+
+  // Handle Confirm Resolved button click
+  document.getElementById('btnConfirmResolution').addEventListener('click', function() {
+    if (!currentReportId) {
+      alert('Error: Report ID not found. Please refresh and try again.');
+      return;
+    }
+
+    // Confirm with user
+    if (confirm('Are you sure the issue has been resolved? This will mark the report as completed.')) {
+      // Create and submit form to confirm resolution
+      const form = document.createElement('form');
+      form.method = 'POST';
+      form.action = `/user/reports/${currentReportId}/confirm`;
+
+      // Add CSRF token
+      const csrfInput = document.createElement('input');
+      csrfInput.type = 'hidden';
+      csrfInput.name = '_token';
+      csrfInput.value = '{{ csrf_token() }}';
+      form.appendChild(csrfInput);
+
+      document.body.appendChild(form);
+      form.submit();
+    }
+  });
+
+  // Handle Reject Resolution button click
+  document.getElementById('btnRejectResolution').addEventListener('click', function() {
+    if (!currentReportId) {
+      alert('Error: Report ID not found. Please refresh and try again.');
+      return;
+    }
+
+    // Close the report details modal
+    const reportDetailsModal = bootstrap.Modal.getInstance(document.getElementById('reportDetailsModal'));
+    reportDetailsModal.hide();
+
+    // Open rejection reason modal
+    const rejectionModal = new bootstrap.Modal(document.getElementById('rejectionReasonModal'));
+    rejectionModal.show();
+
+    // Set form action for rejection
+    const rejectionForm = document.getElementById('rejectionForm');
+    rejectionForm.action = `/user/reports/${currentReportId}/reject`;
+  });
+
+  // Handle rejection form submission
+  document.getElementById('rejectionForm').addEventListener('submit', function(e) {
+    const reasonInput = document.getElementById('rejectionReason');
+
+    // Validate reason length
+    if (reasonInput.value.trim().length < 10) {
+      e.preventDefault();
+      alert('Please provide a reason with at least 10 characters.');
+      return false;
+    }
+
+    // Form will submit normally
+    // Could add loading state here if needed
+  });
+
+  // Table filtering is now handled automatically by table-filter.js
+  // No need for manual event listeners - it auto-initializes!
 </script>
 @endpush

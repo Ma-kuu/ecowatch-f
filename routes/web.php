@@ -6,6 +6,7 @@ use App\Http\Controllers\ReportController;
 use App\Http\Controllers\AnonymousReportController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\AdminController;
+use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
 // Public Pages
@@ -32,6 +33,7 @@ Route::post('/report-anon', [AnonymousReportController::class, 'store'])->name('
 
 Route::middleware('auth')->group(function () {
     Route::get('/report', [ReportController::class, 'create'])->name('report.create');
+    Route::get('/report-authenticated', [ReportController::class, 'create'])->name('report-authenticated');
     Route::post('/report', [ReportController::class, 'store'])->name('report.store');
     Route::get('/report/{id}', [ReportController::class, 'show'])->name('report.show');
     Route::put('/report/{id}', [ReportController::class, 'update'])->name('report.update');
@@ -74,6 +76,10 @@ Route::middleware('auth')->group(function () {
     Route::get('/lgu-dashboard', [DashboardController::class, 'lguDashboard'])
         ->name('lgu-dashboard');
 
+    // LGU Report Mark Fixed Route
+    Route::post('/lgu/reports/{id}/mark-fixed', [DashboardController::class, 'markReportFixed'])
+        ->name('lgu.reports.mark-fixed');
+
     // Admin Settings Routes
     Route::get('/admin-settings', [AdminController::class, 'settings'])
         ->name('admin-settings');
@@ -90,4 +96,24 @@ Route::middleware('auth')->group(function () {
     // Admin Report Validation Route
     Route::post('/admin/reports/{id}/validate', [AdminController::class, 'validateReport'])
         ->name('admin.reports.validate');
+
+    // Admin Report Update Route
+    Route::put('/admin/reports/{id}', [AdminController::class, 'updateReport'])
+        ->name('admin.reports.update');
+
+    // Admin Report Delete Route
+    Route::delete('/admin/reports/{id}', [AdminController::class, 'deleteReport'])
+        ->name('admin.reports.delete');
+});
+
+// ============================================================================
+// USER ROUTES (Authenticated Users)
+// ============================================================================
+Route::middleware(['auth', 'role:user'])->group(function () {
+    // User Confirmation Routes
+    Route::post('/user/reports/{id}/confirm', [UserController::class, 'confirmReportResolved'])
+        ->name('user.reports.confirm');
+
+    Route::post('/user/reports/{id}/reject', [UserController::class, 'rejectReportResolution'])
+        ->name('user.reports.reject');
 });

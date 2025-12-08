@@ -12,9 +12,94 @@
 @endpush
 
 @section('additional-styles')
+  /* Map enlarge button */
+  .map-enlarge-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 1000;
+    background: white;
+    border: 2px solid rgba(0,0,0,0.2);
+    border-radius: 4px;
+    padding: 5px 10px;
+    cursor: pointer;
+    font-size: 18px;
+    box-shadow: 0 1px 5px rgba(0,0,0,0.15);
+  }
+  .map-enlarge-btn:hover {
+    background: #f4f4f4;
+  }
+
   #viewMap {
     height: 300px;
     background-color: #e9ecef;
+    border-radius: 8px;
+  }
+
+  /* Map lightbox overlay */
+  .map-lightbox-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.8);
+    z-index: 9998;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+  .map-lightbox-overlay.active {
+    display: block;
+    opacity: 1;
+  }
+
+  .map-lightbox-container {
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0.9);
+    width: 90%;
+    height: 85%;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+    z-index: 9999;
+    padding: 15px;
+    opacity: 0;
+    transition: all 0.3s ease;
+  }
+  .map-lightbox-container.active {
+    display: block;
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+
+  .map-lightbox-close {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background: white;
+    border: none;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    font-size: 24px;
+    cursor: pointer;
+    z-index: 10000;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .map-lightbox-close:hover {
+    background: #f0f0f0;
+  }
+
+  #enlargedMap {
+    width: 100%;
+    height: 100%;
     border-radius: 8px;
   }
 @endsection
@@ -27,6 +112,36 @@
       <p class="text-muted">Monitor and manage environmental reports in {{ $lgu->name ?? 'your municipality' }}, {{ $lgu->province ?? 'Davao del Norte' }}</p>
     </div>
   </div>
+
+  <!-- Success/Error Messages -->
+  @if(session('success'))
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+      <i class="bi bi-check-circle-fill me-2"></i>
+      {{ session('success') }}
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+  @endif
+
+  @if(session('error'))
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+      <i class="bi bi-exclamation-triangle-fill me-2"></i>
+      {{ session('error') }}
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+  @endif
+
+  @if($errors->any())
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+      <i class="bi bi-exclamation-triangle-fill me-2"></i>
+      <strong>Please fix the following errors:</strong>
+      <ul class="mb-0 mt-2">
+        @foreach($errors->all() as $error)
+          <li>{{ $error }}</li>
+        @endforeach
+      </ul>
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+  @endif
 
   <!-- Summary Cards -->
   <div class="row g-4 mb-4">
@@ -216,10 +331,28 @@
                 <span class="badge bg-{{ $report->status_color }}">{{ $report->status_display }}</span>
               </td>
               <td class="py-3 text-center table-actions">
-                <button class="btn btn-sm btn-outline-primary me-1" data-bs-toggle="modal" data-bs-target="#viewReportModal">
+                <button class="btn btn-sm btn-outline-primary me-1"
+                        data-bs-toggle="modal"
+                        data-bs-target="#viewReportModal"
+                        data-report-id="{{ $report->id }}"
+                        data-report-code="{{ $report->report_id }}"
+                        data-description="{{ $report->description }}"
+                        data-location="{{ $report->location }}"
+                        data-lat="{{ $report->latitude }}"
+                        data-lng="{{ $report->longitude }}"
+                        data-status="{{ $report->status_display }}"
+                        data-status-color="{{ $report->status_color }}"
+                        data-violation="{{ $report->violation_type_display }}"
+                        data-created="{{ $report->created_at->format('M d, Y') }}"
+                        data-reporter="{{ $report->is_anonymous ? 'Anonymous' : ($report->reporter?->name ?? 'N/A') }}">
                   <i class="bi bi-eye"></i>
                 </button>
-                <button class="btn btn-sm btn-outline-success" data-bs-toggle="modal" data-bs-target="#markFixedModal" {{ $report->status == 'fixed' ? 'disabled' : '' }}>
+                <button class="btn btn-sm btn-outline-success"
+                        data-bs-toggle="modal"
+                        data-bs-target="#markFixedModal"
+                        data-report-id="{{ $report->id }}"
+                        data-report-code="{{ $report->report_id }}"
+                        {{ in_array($report->status, ['awaiting-confirmation', 'resolved']) ? 'disabled' : '' }}>
                   <i class="bi bi-pencil"></i>
                 </button>
               </td>
@@ -299,7 +432,12 @@
               </h6>
               <p class="mb-2" id="modalLocation"></p>
               <!-- Map -->
-              <div id="viewMap" class="mb-0"></div>
+              <div style="position: relative;">
+                <button class="map-enlarge-btn" id="enlargeMapBtn" title="Enlarge map">
+                  <i class="bi bi-arrows-fullscreen"></i>
+                </button>
+                <div id="viewMap" class="mb-0 map-normal"></div>
+              </div>
               <small class="text-muted">Interactive map showing report location</small>
             </div>
 
@@ -349,12 +487,13 @@
       <div class="modal-content">
         <div class="modal-header" style="background-color: #e9f7ef; border-bottom: 2px solid #198754;">
           <h5 class="modal-title fw-bold" id="markFixedModalLabel" style="color: #198754;">
-            <i class="bi bi-check-circle"></i> Mark Report as Fixed
+            <i class="bi bi-check-circle"></i> Mark Report as Fixed - <span id="fixedReportCode"></span>
           </h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
-        <div class="modal-body">
-          <form id="markFixedForm">
+        <form id="markFixedForm" method="POST" action="#" enctype="multipart/form-data">
+          @csrf
+          <div class="modal-body">
             <!-- Report ID Display -->
             <div class="alert alert-info">
               <small><i class="bi bi-info-circle"></i> You are marking this report as fixed. Please provide proof and details of actions taken.</small>
@@ -363,39 +502,54 @@
             <!-- Upload Proof Photo -->
             <div class="mb-3">
               <label for="proofPhoto" class="form-label fw-bold">Upload Proof Photo <span class="text-danger">*</span></label>
-              <input type="file" class="form-control" id="proofPhoto" accept="image/*" required>
+              <input type="file" class="form-control" id="proofPhoto" name="proof_photo" accept="image/*" required>
               <div class="form-text">Upload a clear photo showing the issue has been resolved (max 5MB)</div>
             </div>
 
             <!-- Remarks/Actions Taken -->
             <div class="mb-3">
               <label for="lguRemarks" class="form-label fw-bold">Remarks / Actions Taken <span class="text-danger">*</span></label>
-              <textarea class="form-control" id="lguRemarks" rows="5" placeholder="Describe the actions taken to resolve this issue..." required></textarea>
+              <textarea class="form-control" id="lguRemarks" name="lgu_remarks" rows="5" placeholder="Describe the actions taken to resolve this issue..." required></textarea>
               <div class="form-text">Provide detailed information about how the issue was addressed</div>
             </div>
 
             <!-- Date Fixed -->
             <div class="mb-3">
               <label for="dateFixed" class="form-label fw-bold">Date Fixed <span class="text-danger">*</span></label>
-              <input type="date" class="form-control" id="dateFixed" required>
+              <input type="date" class="form-control" id="dateFixed" name="date_fixed" max="{{ date('Y-m-d') }}" required>
             </div>
 
             <!-- Team/Personnel Involved -->
             <div class="mb-3">
               <label for="personnelInvolved" class="form-label fw-bold">Team/Personnel Involved</label>
-              <input type="text" class="form-control" id="personnelInvolved" placeholder="e.g., Barangay Clean-up Team, 5 personnel">
+              <input type="text" class="form-control" id="personnelInvolved" name="personnel_involved" placeholder="e.g., Barangay Clean-up Team, 5 personnel">
               <div class="form-text">Optional: List the team members or units involved</div>
             </div>
-          </form>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-          <button type="button" class="btn btn-success">
-            <i class="bi bi-send"></i> Submit for Verification
-          </button>
-        </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn btn-success" id="submitMarkFixedBtn">
+              <span class="submit-text">
+                <i class="bi bi-send"></i> Submit for Verification
+              </span>
+              <span class="submit-loading d-none">
+                <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                Submitting...
+              </span>
+            </button>
+          </div>
+        </form>
       </div>
     </div>
+  </div>
+
+  <!-- Map Lightbox -->
+  <div class="map-lightbox-overlay" id="mapLightboxOverlay"></div>
+  <div class="map-lightbox-container" id="mapLightboxContainer">
+    <button class="map-lightbox-close" id="closeLightbox" title="Close">
+      <i class="bi bi-x"></i>
+    </button>
+    <div id="enlargedMap"></div>
   </div>
 @endsection
 
@@ -404,134 +558,296 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 
 <script>
-  let viewMap;
-  let viewMarker;
-
-  // Initialize map when view modal is shown
-  document.getElementById('viewReportModal').addEventListener('shown.bs.modal', function () {
-    if (!viewMap) {
-      viewMap = L.map('viewMap').setView([12.8797, 121.7740], 6);
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-      }).addTo(viewMap);
-
-      viewMarker = L.marker([12.8797, 121.7740]).addTo(viewMap);
-    }
-    setTimeout(function() {
-      viewMap.invalidateSize();
-    }, 100);
-  });
-
-  // Filter functionality
-  function filterTable() {
-    const searchValue = document.getElementById('searchInput').value.toLowerCase();
-    const statusValue = document.getElementById('statusFilter').value.toLowerCase();
-    const typeValue = document.getElementById('typeFilter').value.toLowerCase();
-    const table = document.getElementById('reportsTable');
-    const rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
-
-    for (let i = 0; i < rows.length; i++) {
-      const row = rows[i];
-      const text = row.textContent.toLowerCase();
-      const status = row.getAttribute('data-status');
-      const type = row.getAttribute('data-type');
-
-      let matchesSearch = text.includes(searchValue);
-      let matchesStatus = statusValue === '' || status === statusValue;
-      let matchesType = typeValue === '' || type === typeValue;
-
-      if (matchesSearch && matchesStatus && matchesType) {
-        row.style.display = '';
-      } else {
-        row.style.display = 'none';
-      }
-    }
-  }
-
-  // Event listeners
-  document.getElementById('searchInput').addEventListener('keyup', filterTable);
-  document.getElementById('statusFilter').addEventListener('change', filterTable);
-  document.getElementById('typeFilter').addEventListener('change', filterTable);
+  // Table filtering is now handled automatically by table-filter.js
+  // No need for manual event listeners - it auto-initializes!
 </script>
 
+<!-- Load Leaflet library and routing plugin -->
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"></script>
+
+<!-- Load our helper modules -->
+<script src="{{ asset('js/table-filter.js') }}"></script>
+<script src="{{ asset('js/modal-helper.js') }}"></script>
+<script src="{{ asset('js/map-helper.js') }}"></script>
+
 <script>
-  let viewMap = null;
+  // Map variables for modal view and lightbox
+  let lguMap = null;
+  let lguEnlargedMap = null;
+  let lguMarker = null;
+  let lguEnlargedMarker = null;
   let routingControl = null;
   const lguHqLatLng = [{{ $lgu->latitude ?? 0 }}, {{ $lgu->longitude ?? 0 }}];
 
-  // Initialize map when modal opens
-  const viewReportModal = document.getElementById('viewReportModal');
-  viewReportModal.addEventListener('shown.bs.modal', function () {
-    if (!viewMap) {
-      viewMap = L.map('viewMap').setView([7.5, 125.8], 13);
+  // =============================================================================
+  // LIGHTBOX FUNCTIONALITY
+  // =============================================================================
 
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; OpenStreetMap contributors'
-      }).addTo(viewMap);
-    }
+  // Handle map enlarge button - open lightbox with current map state
+  document.getElementById('enlargeMapBtn').addEventListener('click', function() {
+    const overlay = document.getElementById('mapLightboxOverlay');
+    const container = document.getElementById('mapLightboxContainer');
 
-    setTimeout(() => viewMap.invalidateSize(), 100);
+    // Get stored map data using our helper
+    const mapData = getMapData('viewMap');
+
+    // Show lightbox overlay with smooth animation
+    overlay.classList.add('active');
+    setTimeout(() => container.classList.add('active'), 10);
+
+    // Initialize or update enlarged map after animation
+    setTimeout(() => {
+      if (!lguEnlargedMap) {
+        // Create enlarged map first time (using our helper)
+        const defaultLat = mapData?.lat || 7.5;
+        const defaultLng = mapData?.lng || 125.8;
+        const zoom = mapData?.lat ? 15 : 13;
+        lguEnlargedMap = createMap('enlargedMap', defaultLat, defaultLng, zoom);
+      } else {
+        // Update existing enlarged map (using our helper)
+        const lat = mapData?.lat || 7.5;
+        const lng = mapData?.lng || 125.8;
+        const zoom = mapData?.lat ? 15 : 13;
+        updateMapView(lguEnlargedMap, lat, lng, zoom);
+        refreshMap(lguEnlargedMap);
+      }
+
+      // Add marker if coordinates exist
+      if (mapData && mapData.lat && mapData.lng) {
+        // Remove old marker if exists (using our helper)
+        if (lguEnlargedMarker) {
+          removeMarker(lguEnlargedMap, lguEnlargedMarker);
+        }
+
+        // Add new marker (using our helper)
+        lguEnlargedMarker = addMarker(lguEnlargedMap, mapData.lat, mapData.lng, mapData.label || 'Report Location');
+
+        // Open the popup
+        if (lguEnlargedMarker) {
+          lguEnlargedMarker.openPopup();
+        }
+      }
+    }, 350);
   });
 
-  // Remove routing when modal closes
+  // Close lightbox function
+  function closeLightbox() {
+    const overlay = document.getElementById('mapLightboxOverlay');
+    const container = document.getElementById('mapLightboxContainer');
+    container.classList.remove('active');
+    setTimeout(() => overlay.classList.remove('active'), 300);
+  }
+
+  // Close lightbox on button click
+  document.getElementById('closeLightbox').addEventListener('click', closeLightbox);
+
+  // Close lightbox on overlay click
+  document.getElementById('mapLightboxOverlay').addEventListener('click', closeLightbox);
+
+  // Close lightbox on ESC key press
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+      closeLightbox();
+    }
+  });
+
+  // =============================================================================
+  // VIEW REPORT MODAL - POPULATE & MAP DISPLAY
+  // =============================================================================
+
+  // Handle View Report button clicks
+  document.querySelectorAll('[data-bs-target="#viewReportModal"]').forEach(button => {
+    button.addEventListener('click', function() {
+      const lat = parseFloat(this.dataset.lat);
+      const lng = parseFloat(this.dataset.lng);
+      const reportCode = this.dataset.reportCode;
+
+      // Store coordinates using our map helper
+      storeMapData('viewMap', lat, lng, reportCode);
+
+      // Populate modal fields using our modal helper
+      populateModalFields(this, {
+        'reportCode': 'modalReportId',
+        'violation': 'modalViolationType',
+        'created': 'modalDateReceived',
+        'reporter': 'modalReporter',
+        'description': 'modalDescription',
+        'location': 'modalLocation'
+      });
+
+      // Set status badge with color (custom logic for badge)
+      const statusBadge = document.getElementById('modalStatus');
+      statusBadge.textContent = this.dataset.status;
+      statusBadge.className = `badge bg-${this.dataset.statusColor}`;
+    });
+  });
+
+  // Initialize map when view modal is shown
+  const viewReportModal = document.getElementById('viewReportModal');
+  viewReportModal.addEventListener('shown.bs.modal', function () {
+    // Get stored map data
+    const mapData = getMapData('viewMap');
+
+    if (!lguMap) {
+      // Create map first time (using our helper)
+      const defaultLat = mapData?.lat || 7.5;
+      const defaultLng = mapData?.lng || 125.8;
+      const zoom = mapData?.lat ? 15 : 13;
+      lguMap = createMap('viewMap', defaultLat, defaultLng, zoom);
+    }
+
+    // If we have coordinates, show them on the map
+    if (mapData && mapData.lat && mapData.lng) {
+      // Update map view (using our helper)
+      updateMapView(lguMap, mapData.lat, mapData.lng, 15);
+
+      // Remove old marker if exists (using our helper)
+      if (lguMarker) {
+        removeMarker(lguMap, lguMarker);
+      }
+
+      // Add new marker (using our helper)
+      lguMarker = addMarker(lguMap, mapData.lat, mapData.lng, mapData.label || 'Report Location');
+
+      // Open the popup
+      if (lguMarker) {
+        lguMarker.openPopup();
+      }
+    }
+
+    // Fix map display (using our helper)
+    refreshMap(lguMap);
+  });
+
+  // Remove routing when modal closes (cleanup)
   viewReportModal.addEventListener('hidden.bs.modal', function () {
     if (routingControl) {
-      viewMap.removeControl(routingControl);
+      lguMap.removeControl(routingControl);
       routingControl = null;
     }
   });
 
-  // Show directions button handler
-  document.getElementById('btnShowDirections').addEventListener('click', function() {
-    const reportLat = parseFloat(document.getElementById('viewMap').dataset.lat);
-    const reportLng = parseFloat(document.getElementById('viewMap').dataset.lng);
+  // =============================================================================
+  // ROUTING / DIRECTIONS FUNCTIONALITY (LGU SPECIFIC)
+  // =============================================================================
 
-    if (!reportLat || !reportLng) {
+  // Show directions button handler - open in lightbox with routing
+  document.getElementById('btnShowDirections').addEventListener('click', function() {
+    // Get stored map data
+    const mapData = getMapData('viewMap');
+
+    if (!mapData || !mapData.lat || !mapData.lng) {
       alert('Report location coordinates not available');
       return;
     }
 
-    // Remove existing routing control if any
-    if (routingControl) {
-      viewMap.removeControl(routingControl);
+    const overlay = document.getElementById('mapLightboxOverlay');
+    const container = document.getElementById('mapLightboxContainer');
+
+    // Show lightbox
+    overlay.classList.add('active');
+    setTimeout(() => container.classList.add('active'), 10);
+
+    // Initialize or update enlarged map with routing
+    setTimeout(() => {
+      if (!lguEnlargedMap) {
+        // Create enlarged map (using our helper)
+        lguEnlargedMap = createMap('enlargedMap', mapData.lat, mapData.lng, 13);
+      } else {
+        // Remove existing routing if any
+        if (routingControl) {
+          lguEnlargedMap.removeControl(routingControl);
+          routingControl = null;
+        }
+        // Update map view (using our helper)
+        updateMapView(lguEnlargedMap, mapData.lat, mapData.lng, 13);
+        refreshMap(lguEnlargedMap);
+      }
+
+      // Create routing control from LGU HQ to report location
+      routingControl = L.Routing.control({
+        waypoints: [
+          L.latLng(lguHqLatLng[0], lguHqLatLng[1]), // LGU headquarters
+          L.latLng(mapData.lat, mapData.lng)         // Report location
+        ],
+        routeWhileDragging: false,
+        showAlternatives: false,
+        addWaypoints: false,
+        lineOptions: {
+          styles: [{ color: '#198754', weight: 5, opacity: 0.7 }] // Green route line
+        },
+        createMarker: function(i, waypoint, n) {
+          // Custom markers for start (LGU HQ) and end (Report)
+          const marker = L.marker(waypoint.latLng, {
+            draggable: false,
+            icon: L.divIcon({
+              className: 'routing-marker',
+              html: i === 0 ? '<i class="bi bi-building" style="font-size: 24px; color: #198754;"></i>' :
+                             '<i class="bi bi-geo-alt-fill" style="font-size: 24px; color: #dc3545;"></i>',
+              iconSize: [30, 30],
+              iconAnchor: [15, 30]
+            })
+          });
+
+          marker.bindPopup(i === 0 ? 'LGU Municipal Hall' : 'Report Location');
+          return marker;
+        }
+      }).addTo(lguEnlargedMap);
+
+      // Fit map to show entire route when routing is calculated
+      routingControl.on('routesfound', function(e) {
+        const bounds = L.latLngBounds([lguHqLatLng, [mapData.lat, mapData.lng]]);
+        lguEnlargedMap.fitBounds(bounds, { padding: [50, 50] });
+      });
+    }, 350);
+  });
+
+  // =============================================================================
+  // MARK FIXED MODAL - POPULATE & FORM HANDLING
+  // =============================================================================
+
+  // Mark Fixed Modal - Populate report data when opening
+  const markFixedModal = document.getElementById('markFixedModal');
+  markFixedModal.addEventListener('show.bs.modal', function (event) {
+    const button = event.relatedTarget;
+    const reportId = button.getAttribute('data-report-id');
+    const reportCode = button.getAttribute('data-report-code');
+
+    if (!reportId) {
+      alert('Error: Report ID not found. Please refresh the page and try again.');
+      return;
     }
 
-    // Create routing control
-    routingControl = L.Routing.control({
-      waypoints: [
-        L.latLng(lguHqLatLng[0], lguHqLatLng[1]),
-        L.latLng(reportLat, reportLng)
-      ],
-      routeWhileDragging: false,
-      showAlternatives: false,
-      addWaypoints: false,
-      lineOptions: {
-        styles: [{ color: '#198754', weight: 5, opacity: 0.7 }]
-      },
-      createMarker: function(i, waypoint, n) {
-        const marker = L.marker(waypoint.latLng, {
-          draggable: false,
-          icon: L.divIcon({
-            className: 'routing-marker',
-            html: i === 0 ? '<i class="bi bi-building" style="font-size: 24px; color: #198754;"></i>' :
-                           '<i class="bi bi-geo-alt-fill" style="font-size: 24px; color: #dc3545;"></i>',
-            iconSize: [30, 30],
-            iconAnchor: [15, 30]
-          })
-        });
+    // Update modal title
+    document.getElementById('fixedReportCode').textContent = reportCode || 'Unknown';
 
-        marker.bindPopup(i === 0 ? 'LGU Municipal Hall' : 'Report Location');
-        return marker;
-      }
-    }).addTo(viewMap);
+    // Update form action URL using our helper
+    setFormAction('markFixedForm', `{{ url('lgu/reports') }}/${reportId}/mark-fixed`);
 
-    // Fit map to show entire route
-    routingControl.on('routesfound', function(e) {
-      const bounds = L.latLngBounds([lguHqLatLng, [reportLat, reportLng]]);
-      viewMap.fitBounds(bounds, { padding: [50, 50] });
-    });
+    // Reset form fields using our helper
+    resetModalForm('markFixedForm');
+  });
+
+  // Handle form submission with validation and loading state
+  document.getElementById('markFixedForm').addEventListener('submit', function(e) {
+    // Validate form action is properly set
+    if (this.action.includes('#') || !this.action.includes('mark-fixed')) {
+      e.preventDefault();
+      alert('Error: Form action not properly set. Please close and reopen the modal.');
+      return false;
+    }
+
+    // Validate file upload using our helper (5MB limit)
+    const fileValidation = validateFileUpload('proofPhoto', 5);
+    if (!fileValidation.valid) {
+      e.preventDefault();
+      alert(fileValidation.error);
+      return false;
+    }
+
+    // Show loading state using our helper
+    showLoadingState('submitMarkFixedBtn', 'Submitting...');
   });
 </script>
 @endpush

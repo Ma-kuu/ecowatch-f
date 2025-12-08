@@ -216,4 +216,64 @@ class DashboardController extends Controller
             'verifiedAssigned'
         ));
     }
+
+    /**
+     * Mark report as fixed by LGU.
+     */
+    public function markReportFixed(Request $request, $id)
+    {
+        $report = Report::findOrFail($id);
+        $user = Auth::user();
+
+        // Verify user belongs to the assigned LGU
+        if (!$user->lgu || $user->lgu->id !== $report->assigned_lgu_id) {
+            abort(403, 'Unauthorized to update this report');
+        }
+
+        // Validate input
+        $validated = $request->validate([
+            'proof_photo' => ['required', 'image', 'max:5120'], // 5MB max
+            'lgu_remarks' => ['required', 'string', 'max:2000'],
+            'date_fixed' => ['required', 'date', 'before_or_equal:today'],
+            'personnel_involved' => ['nullable', 'string', 'max:500'],
+        ]);
+
+        // Upload proof photo
+        $photoPath = null;
+        if ($request->hasFile('proof_photo')) {
+            $file = $request->file('proof_photo');
+            $filename = time() . '_' . $report->report_id . '_proof.' . $file->getClientOriginalExtension();
+            $photoPath = $file->storeAs('reports/proof', $filename, 'public');
+
+            // Create photo record
+            $report->photos()->create([
+                'file_path' => $photoPath,
+                'file_name' => $filename,
+                'file_size' => $file->getSize(),
+                'mime_type' => $file->getMimeType(),
+                'uploaded_by' => $user->id,
+                'is_primary' => false,
+            ]);
+        }
+
+        // Update report status and LGU confirmation
+        $report->update([
+            'status' => 'awaiting-confirmation',
+            'lgu_confirmed' => true,
+        ]);
+
+        // Create report update entry
+        $report->updates()->create([
+            'created_by' => $user->id,
+            'update_type' => 'progress',
+            'title' => 'Report Marked as Fixed by LGU',
+            'description' => $validated['lgu_remarks'] .
+                             ($validated['personnel_involved'] ? "\n\nPersonnel: " . $validated['personnel_involved'] : '') .
+                             "\n\nDate Fixed: " . $validated['date_fixed'],
+            'progress_percentage' => 90,
+        ]);
+
+        return redirect()->route('lgu-dashboard')
+            ->with('success', "Report {$report->report_id} has been marked as fixed and submitted for user verification.");
+    }
 }

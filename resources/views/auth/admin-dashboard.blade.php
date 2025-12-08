@@ -13,6 +13,34 @@
 @push('styles')
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+  /* Map enlarge button */
+  .map-enlarge-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 1000;
+    background: white;
+    border: 2px solid rgba(0,0,0,0.2);
+    border-radius: 4px;
+    padding: 5px 10px;
+    cursor: pointer;
+    font-size: 18px;
+    box-shadow: 0 1px 5px rgba(0,0,0,0.15);
+  }
+  .map-enlarge-btn:hover {
+    background: #f4f4f4;
+  }
+  /* Enlarged map state */
+  .map-enlarged {
+    height: 600px !important;
+    transition: height 0.3s ease;
+  }
+  .map-normal {
+    height: 300px !important;
+    transition: height 0.3s ease;
+  }
+</style>
 @endpush
 
 @section('content')
@@ -193,12 +221,46 @@
                 <span class="badge bg-{{ $report->status_color }}">{{ $report->status_display }}</span>
               </td>
               <td class="py-3 text-center table-actions">
-                <button class="btn btn-sm btn-outline-primary me-1" data-bs-toggle="modal" data-bs-target="#viewReportModal">
+                <button class="btn btn-sm btn-outline-primary me-1"
+                        data-bs-toggle="modal"
+                        data-bs-target="#viewReportModal"
+                        data-report-id="{{ $report->id }}"
+                        data-report-code="{{ $report->report_id }}"
+                        data-lat="{{ $report->latitude }}"
+                        data-lng="{{ $report->longitude }}">
                   <i class="bi bi-eye"></i>
                 </button>
-                <button class="btn btn-sm btn-outline-success" data-bs-toggle="modal" data-bs-target="#updateStatusModal">
-                  <i class="bi bi-pencil"></i>
-                </button>
+                @if($report->is_anonymous && (!$report->validity || $report->validity->status === 'pending'))
+                  <!-- Validate button for anonymous reports that haven't been validated yet -->
+                  <button class="btn btn-sm btn-outline-warning"
+                          data-bs-toggle="modal"
+                          data-bs-target="#validateReportModal"
+                          data-report-id="{{ $report->id }}"
+                          data-report-code="{{ $report->report_id }}"
+                          title="Validate Anonymous Report">
+                    <i class="bi bi-shield-check"></i>
+                  </button>
+                @elseif($report->is_anonymous && $report->validity && $report->validity->status === 'invalid')
+                  <!-- Show invalidated badge for invalid anonymous reports (no edit button) -->
+                  <span class="badge bg-danger px-3 py-2">
+                    <i class="bi bi-shield-x-fill me-1"></i>
+                    Invalidated
+                  </span>
+                @else
+                  <!-- Edit button for all other reports (validated anonymous + regular) -->
+                  <button class="btn btn-sm btn-outline-success"
+                          data-bs-toggle="modal"
+                          data-bs-target="#updateStatusModal"
+                          data-report-id="{{ $report->id }}"
+                          data-report-code="{{ $report->report_id }}"
+                          data-report-status="{{ $report->status }}"
+                          data-report-description="{{ $report->description }}"
+                          data-report-priority="{{ $report->priority ?? 'medium' }}"
+                          data-report-remarks="{{ $report->admin_remarks ?? '' }}"
+                          title="Edit Report">
+                    <i class="bi bi-pencil"></i>
+                  </button>
+                @endif
               </td>
             </tr>
             @empty
@@ -309,7 +371,12 @@
                 <i class="bi bi-geo-alt-fill me-1"></i>Location
               </h6>
               <p class="mb-2" id="modalLocation"></p>
-              <div id="viewMap" class="mb-0"></div>
+              <div style="position: relative;">
+                <button class="map-enlarge-btn" id="enlargeMapBtn" title="Enlarge map">
+                  <i class="bi bi-arrows-fullscreen"></i>
+                </button>
+                <div id="viewMap" class="mb-0 map-normal"></div>
+              </div>
               <small class="text-muted">Interactive map showing report location</small>
             </div>
 
@@ -347,8 +414,8 @@
     </div>
   </div>
 
-  <!-- Validate Report Modal -->
-  <div class="modal fade" id="updateStatusModal" tabindex="-1">
+  <!-- Validate Anonymous Report Modal -->
+  <div class="modal fade" id="validateReportModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content">
         <div class="modal-header bg-light">
@@ -403,40 +470,245 @@
       </div>
     </div>
   </div>
+
+  <!-- Edit Report Modal (for all validated reports) -->
+  <div class="modal fade" id="updateStatusModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+      <div class="modal-content">
+        <div class="modal-header bg-light">
+          <div>
+            <h5 class="modal-title fw-bold">
+              <i class="bi bi-pencil-square text-success me-2"></i>Edit Report
+            </h5>
+            <small class="text-muted" id="updateStatusModalReportId"></small>
+          </div>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <form id="editReportForm" method="POST">
+          @csrf
+          @method('PUT')
+          <div class="modal-body">
+            <!-- Report Status -->
+            <div class="mb-4">
+              <label for="reportStatus" class="form-label fw-semibold">
+                <i class="bi bi-flag me-1"></i>Report Status
+              </label>
+              <select class="form-select" name="status" id="reportStatus" required>
+                <option value="pending">Pending</option>
+                <option value="in-review">In Review</option>
+                <option value="in-progress">In Progress</option>
+                <option value="awaiting-confirmation">Awaiting Confirmation</option>
+                <option value="resolved">Resolved</option>
+              </select>
+            </div>
+
+            <!-- Description -->
+            <div class="mb-3">
+              <label for="reportDescription" class="form-label fw-semibold">
+                <i class="bi bi-file-text me-1"></i>Description
+              </label>
+              <textarea class="form-control" name="description" id="reportDescription" rows="4" required></textarea>
+            </div>
+
+            <!-- Admin Remarks -->
+            <div class="mb-3">
+              <label for="adminRemarks" class="form-label fw-semibold">
+                <i class="bi bi-chat-square-text me-1"></i>Admin Remarks
+              </label>
+              <textarea class="form-control" name="admin_remarks" id="adminRemarks" rows="3" placeholder="Add administrative notes..."></textarea>
+            </div>
+
+            <!-- Priority -->
+            <div class="mb-3">
+              <label for="reportPriority" class="form-label fw-semibold">
+                <i class="bi bi-exclamation-triangle me-1"></i>Priority
+              </label>
+              <select class="form-select" name="priority" id="reportPriority">
+                <option value="low">Low</option>
+                <option value="medium">Medium</option>
+                <option value="high">High</option>
+                <option value="urgent">Urgent</option>
+              </select>
+            </div>
+          </div>
+          <div class="modal-footer d-flex justify-content-between">
+            <div>
+              <!-- Delete button on the left -->
+              <button type="button" class="btn btn-danger" id="deleteReportBtn">
+                <i class="bi bi-trash me-1"></i>Delete Report
+              </button>
+            </div>
+            <div>
+              <!-- Action buttons on the right -->
+              <button type="button" class="btn btn-secondary me-2" data-bs-dismiss="modal">Cancel</button>
+              <button type="submit" class="btn btn-success">
+                <i class="bi bi-check-circle me-1"></i>Save Changes
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
 @endsection
 
 @push('scripts')
+<!-- Load Leaflet library -->
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<!-- Load our helper modules -->
+<script src="{{ asset('js/modal-helper.js') }}"></script>
+<script src="{{ asset('js/map-helper.js') }}"></script>
+
 <script>
-  let viewMap;
-  let currentMarker;
+  // Map variables
+  let adminMap = null;
+  let adminMarker = null;
+  let isMapEnlarged = false;
+
+  // Handle map enlarge button
+  document.getElementById('enlargeMapBtn').addEventListener('click', function() {
+    const mapElement = document.getElementById('viewMap');
+    const icon = this.querySelector('i');
+
+    // Toggle enlarged state
+    isMapEnlarged = !isMapEnlarged;
+
+    if (isMapEnlarged) {
+      mapElement.classList.remove('map-normal');
+      mapElement.classList.add('map-enlarged');
+      icon.className = 'bi bi-fullscreen-exit';
+    } else {
+      mapElement.classList.remove('map-enlarged');
+      mapElement.classList.add('map-normal');
+      icon.className = 'bi bi-arrows-fullscreen';
+    }
+
+    // Fix map display after resize (using our helper)
+    refreshMap(adminMap);
+  });
+
+  // Handle View Report button clicks
+  document.querySelectorAll('[data-bs-target="#viewReportModal"]').forEach(button => {
+    button.addEventListener('click', function() {
+      const lat = parseFloat(this.dataset.lat);
+      const lng = parseFloat(this.dataset.lng);
+      const reportCode = this.dataset.reportCode;
+
+      // Store coordinates using our map helper
+      storeMapData('viewMap', lat, lng, reportCode);
+    });
+  });
+
+  // Handle Validate Anonymous Report button clicks
+  document.querySelectorAll('[data-bs-target="#validateReportModal"]').forEach(button => {
+    button.addEventListener('click', function() {
+      const reportId = this.dataset.reportId;
+      const reportCode = this.dataset.reportCode;
+
+      // Update modal title
+      document.getElementById('statusModalReportId').textContent = reportCode;
+
+      // Update form action using our helper
+      setFormAction('validateReportForm', `/admin/reports/${reportId}/validate`);
+
+      // Reset form using our helper
+      resetModalForm('validateReportForm');
+    });
+  });
+
+  // Handle Edit Report button clicks
+  document.querySelectorAll('[data-bs-target="#updateStatusModal"]').forEach(button => {
+    button.addEventListener('click', function() {
+      const reportId = this.dataset.reportId;
+      const reportCode = this.dataset.reportCode;
+
+      // Update modal title
+      document.getElementById('updateStatusModalReportId').textContent = reportCode;
+
+      // Populate form fields using our helper
+      populateModalFields(this, {
+        'reportStatus': 'reportStatus',
+        'reportDescription': 'reportDescription',
+        'reportPriority': 'reportPriority',
+        'reportRemarks': 'adminRemarks'
+      });
+
+      // Update form action using our helper
+      setFormAction('editReportForm', `/admin/reports/${reportId}`);
+
+      // Store report ID in modal for delete button
+      const modal = document.getElementById('updateStatusModal');
+      modal.dataset.reportId = reportId;
+      modal.dataset.reportCode = reportCode;
+    });
+  });
+
+  // Handle Delete Report button
+  document.getElementById('deleteReportBtn').addEventListener('click', function() {
+    const modal = document.getElementById('updateStatusModal');
+    const reportId = modal.dataset.reportId;
+    const reportCode = modal.dataset.reportCode;
+
+    if (confirm(`Are you sure you want to delete report ${reportCode}? This action cannot be undone.`)) {
+      // Create and submit delete form
+      const form = document.createElement('form');
+      form.method = 'POST';
+      form.action = `/admin/reports/${reportId}`;
+
+      // Add CSRF token
+      const csrfInput = document.createElement('input');
+      csrfInput.type = 'hidden';
+      csrfInput.name = '_token';
+      csrfInput.value = '{{ csrf_token() }}';
+      form.appendChild(csrfInput);
+
+      // Add DELETE method
+      const methodInput = document.createElement('input');
+      methodInput.type = 'hidden';
+      methodInput.name = '_method';
+      methodInput.value = 'DELETE';
+      form.appendChild(methodInput);
+
+      document.body.appendChild(form);
+      form.submit();
+    }
+  });
 
   // Initialize map when view modal is shown
   document.getElementById('viewReportModal').addEventListener('shown.bs.modal', function () {
-    if (!viewMap) {
-      // Default center (Philippines)
-      viewMap = L.map('viewMap').setView([12.8797, 121.7740], 6);
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-      }).addTo(viewMap);
-    }
-    setTimeout(function() {
-      viewMap.invalidateSize();
-    }, 100);
-  });
+    // Get stored map data
+    const mapData = getMapData('viewMap');
 
-  // Function to update map with report location
-  function updateMapLocation(lat, lng, label) {
-    if (viewMap) {
-      viewMap.setView([lat, lng], 13);
-      if (currentMarker) {
-        viewMap.removeLayer(currentMarker);
-      }
-      currentMarker = L.marker([lat, lng]).addTo(viewMap)
-        .bindPopup(label)
-        .openPopup();
+    if (!adminMap) {
+      // Create map first time (using our helper)
+      const defaultLat = mapData?.lat || 12.8797;
+      const defaultLng = mapData?.lng || 121.7740;
+      adminMap = createMap('viewMap', defaultLat, defaultLng, mapData?.lat ? 15 : 6);
     }
-  }
+
+    // If we have coordinates, show them on the map
+    if (mapData && mapData.lat && mapData.lng) {
+      // Update map view (using our helper)
+      updateMapView(adminMap, mapData.lat, mapData.lng, 15);
+
+      // Remove old marker if exists (using our helper)
+      if (adminMarker) {
+        removeMarker(adminMap, adminMarker);
+      }
+
+      // Add new marker (using our helper)
+      adminMarker = addMarker(adminMap, mapData.lat, mapData.lng, mapData.label || 'Report Location');
+
+      // Open the popup
+      if (adminMarker) {
+        adminMarker.openPopup();
+      }
+    }
+
+    // Fix map display (using our helper)
+    refreshMap(adminMap);
+  });
 
   // Category Horizontal Bar Chart with Unique Colors per Violation
   const ctx = document.getElementById('categoryChart').getContext('2d');

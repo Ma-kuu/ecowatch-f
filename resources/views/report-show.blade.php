@@ -255,15 +255,21 @@
     // Create FormData for file upload
     const formData = new FormData(this);
 
-    // AJAX submission
+    // AJAX submission with better error handling
     fetch('{{ route("report.store") }}', {
       method: 'POST',
-      headers: {
-        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-      },
       body: formData
     })
-    .then(response => response.json())
+    .then(response => {
+      // Check if response is JSON
+      const contentType = response.headers.get("content-type");
+      if (contentType && contentType.indexOf("application/json") !== -1) {
+        return response.json();
+      } else {
+        // If not JSON, throw error with status
+        throw new Error(`Server returned ${response.status}: Expected JSON but got HTML. Please check if you're logged in or if there's a server error.`);
+      }
+    })
     .then(data => {
       if (data.success) {
         // Show success notification
@@ -271,7 +277,7 @@
           title: 'Report Submitted Successfully!',
           message: data.message,
           type: 'success',
-          duration: 6000
+          duration: 5000
         });
 
         // Reset form
@@ -279,12 +285,12 @@
         if (marker) map.removeLayer(marker);
         marker = null;
         document.getElementById('fileName').innerHTML = '';
-        
+
         // Reset button
         submitBtn.innerHTML = originalText;
         submitBtn.disabled = false;
 
-        // Redirect to dashboard after delay
+        // Redirect after delay
         setTimeout(() => {
           window.location.href = data.redirect;
         }, 2000);
@@ -300,7 +306,7 @@
         type: 'error',
         duration: 5000
       });
-      
+
       submitBtn.innerHTML = originalText;
       submitBtn.disabled = false;
     });
