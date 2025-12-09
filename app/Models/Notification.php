@@ -50,10 +50,20 @@ class Notification extends Model
     }
 
     /**
+     * Check if notification is read.
+     */
+    public function getIsReadAttribute(): bool
+    {
+        return !is_null($this->read_at);
+    }
+
+    /**
      * Mark notification as read.
      */
     public function markAsRead(): void
     {
-        $this->update(['read_at' => now()]);
+        if (is_null($this->read_at)) {
+            $this->update(['read_at' => now()]);
+        }
     }
 }

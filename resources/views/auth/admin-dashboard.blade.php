@@ -5,7 +5,11 @@
 @section('dashboard-home', route('admin-dashboard'))
 
 @section('nav-links')
-  <li class="nav-item"><a class="nav-link text-dark" href="{{ route('admin-settings') }}">Settings</a></li>
+  <li class="nav-item">
+    <a class="nav-link text-dark" href="{{ route('admin-settings') }}">
+      <i class="bi bi-gear-fill"></i> Settings
+    </a>
+  </li>
 @endsection
 
 @section('footer-title', 'EcoWatch Admin Panel')
@@ -33,110 +37,111 @@
   </div>
 
   <!-- Summary Cards -->
+<div class="row g-4 mb-4">
+  <div class="col-md-6 col-lg-3">
+    <x-stat-card 
+      title="Total Reports" 
+      :value="$totalReports ?? 0" 
+      icon="bi-file-earmark-text" 
+      color="secondary"
+      subtitle="All time submissions"
+      :filter-url="route('admin-dashboard')"
+    />
+  </div>
+
+  <div class="col-md-6 col-lg-3">
+    <x-stat-card 
+      title="Pending Reports" 
+      :value="$pendingReports ?? 0" 
+      icon="bi-clock-history" 
+      color="warning"
+      subtitle="Awaiting review"
+      :filter-url="route('admin-dashboard', ['status' => ['pending']])"
+    />
+  </div>
+
+  <div class="col-md-6 col-lg-3">
+    <x-stat-card 
+      title="In Review" 
+      :value="$inReviewReports ?? 0" 
+      icon="bi-search" 
+      color="info"
+      subtitle="Being investigated"
+      :filter-url="route('admin-dashboard', ['status' => ['in-review', 'in-progress']])"
+    />
+  </div>
+
+  <div class="col-md-6 col-lg-3">
+    <x-stat-card 
+      title="Resolved" 
+      :value="$resolvedReports ?? 0" 
+      icon="bi-check-circle" 
+      color="success"
+      subtitle="Successfully resolved"
+      :filter-url="route('admin-dashboard', ['status' => ['resolved']])"
+    />
+  </div>
+</div>
+
+  <!-- Analytics Section -->
   <div class="row g-4 mb-4">
-    <div class="col-md-6 col-lg-3">
-      <div class="card stat-card total shadow-sm border-0 h-100">
+    <!-- Category Breakdown Chart -->
+    <div class="col-lg-4">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-header bg-white border-bottom">
+          <h6 class="mb-0 fw-bold">
+            <i class="bi bi-pie-chart me-2 text-success"></i>Reports by Category
+          </h6>
+        </div>
         <div class="card-body">
-          <div class="d-flex justify-content-between align-items-start">
-            <div>
-              <p class="text-muted text-uppercase small mb-1 fw-semibold">Total Reports</p>
-              <h3 class="fw-bold mb-0">{{ $totalReports ?? 0 }}</h3>
-            </div>
-            <div class="bg-secondary bg-opacity-10 rounded p-3">
-              <i class="bi bi-file-earmark-text text-secondary" style="font-size: 24px;"></i>
-            </div>
-          </div>
-          <p class="text-muted small mb-0 mt-2">All time submissions</p>
+          <canvas id="categoryChart" height="250"></canvas>
         </div>
       </div>
     </div>
 
-    <div class="col-md-6 col-lg-3">
-      <div class="card stat-card pending shadow-sm border-0 h-100">
+    <!-- Status Distribution Chart -->
+    <div class="col-lg-4">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-header bg-white border-bottom">
+          <h6 class="mb-0 fw-bold">
+            <i class="bi bi-bar-chart me-2 text-success"></i>Reports by Status
+          </h6>
+        </div>
         <div class="card-body">
-          <div class="d-flex justify-content-between align-items-start">
-            <div>
-              <p class="text-muted text-uppercase small mb-1 fw-semibold">Pending Reports</p>
-              <h3 class="fw-bold mb-0">{{ $pendingReports ?? 0 }}</h3>
-            </div>
-            <div class="bg-warning bg-opacity-10 rounded p-3">
-              <i class="bi bi-clock-history text-warning" style="font-size: 24px;"></i>
-            </div>
-          </div>
-          <p class="text-muted small mb-0 mt-2">Awaiting review</p>
+          <canvas id="statusChart" height="250"></canvas>
         </div>
       </div>
     </div>
 
-    <div class="col-md-6 col-lg-3">
-      <div class="card stat-card in-review shadow-sm border-0 h-100">
-        <div class="card-body">
-          <div class="d-flex justify-content-between align-items-start">
-            <div>
-              <p class="text-muted text-uppercase small mb-1 fw-semibold">In Review</p>
-              <h3 class="fw-bold mb-0">{{ $inReviewReports ?? 0 }}</h3>
-            </div>
-            <div class="bg-info bg-opacity-10 rounded p-3">
-              <i class="bi bi-search text-info" style="font-size: 24px;"></i>
-            </div>
-          </div>
-          <p class="text-muted small mb-0 mt-2">Being investigated</p>
+    <!-- Monthly Trend Chart -->
+    <div class="col-lg-4">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-header bg-white border-bottom">
+          <h6 class="mb-0 fw-bold">
+            <i class="bi bi-graph-up me-2 text-success"></i>Monthly Trend
+          </h6>
         </div>
-      </div>
-    </div>
-
-    <div class="col-md-6 col-lg-3">
-      <div class="card stat-card resolved shadow-sm border-0 h-100">
         <div class="card-body">
-          <div class="d-flex justify-content-between align-items-start">
-            <div>
-              <p class="text-muted text-uppercase small mb-1 fw-semibold">Resolved</p>
-              <h3 class="fw-bold mb-0">{{ $resolvedReports ?? 0 }}</h3>
-            </div>
-            <div class="bg-success bg-opacity-10 rounded p-3">
-              <i class="bi bi-check-circle text-success" style="font-size: 24px;"></i>
-            </div>
-          </div>
-          <p class="text-muted small mb-0 mt-2">Successfully resolved</p>
+          <canvas id="monthlyChart" height="250"></canvas>
         </div>
       </div>
     </div>
   </div>
 
   <!-- Filters and Search -->
-  <form method="GET" action="{{ route('admin-dashboard') }}" id="filterForm">
-    <div class="row g-3 mb-4">
-      <div class="col-md-3">
-        <select class="form-select" name="violation_type" id="typeFilter" onchange="document.getElementById('filterForm').submit()">
-          <option value="">All Report Types</option>
-          @foreach(\App\Models\ViolationType::orderBy('name')->get() as $type)
-            <option value="{{ $type->id }}" {{ request('violation_type') == $type->id ? 'selected' : '' }}>
-              {{ $type->name }}
-            </option>
-          @endforeach
-        </select>
-      </div>
-      <div class="col-md-3">
-        <select class="form-select" name="status" id="statusFilter" onchange="document.getElementById('filterForm').submit()">
-          <option value="">All Status</option>
-          <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Pending</option>
-          <option value="in-review" {{ request('status') == 'in-review' ? 'selected' : '' }}>In Review</option>
-          <option value="in-progress" {{ request('status') == 'in-progress' ? 'selected' : '' }}>In Progress</option>
-          <option value="awaiting-confirmation" {{ request('status') == 'awaiting-confirmation' ? 'selected' : '' }}>Awaiting Confirmation</option>
-          <option value="resolved" {{ request('status') == 'resolved' ? 'selected' : '' }}>Resolved</option>
-        </select>
-      </div>
-      <div class="col-md-6">
-        <div class="input-group">
-          <span class="input-group-text bg-light border-end-0">
-            <i class="bi bi-search text-muted"></i>
-          </span>
-          <input type="text" class="form-control border-start-0" placeholder="Search reports..." name="search" id="searchInput" value="{{ request('search') }}">
-          <button type="submit" class="btn btn-primary">Search</button>
-        </div>
-      </div>
-    </div>
-  </form>
+  <x-dashboard-filters 
+    :action="route('admin-dashboard')"
+    :show-violation-type="true"
+    :show-status="true"
+    :show-lgu="true"
+    :show-barangay="true"
+    :show-priority="true"
+    :show-date-range="true"
+    :show-flagged="true"
+    :show-reporter-type="true"
+    :lgus="\App\Models\Lgu::orderBy('name')->get()"
+    :barangays="\App\Models\Barangay::orderBy('name')->get()"
+  />
 
   <!-- Reports Management Table -->
   <div class="card shadow-sm border-0 mb-4">
@@ -234,7 +239,8 @@
                         data-date="{{ $report->created_at->format('M d, Y') }}"
                         data-status="{{ $report->status_display }}"
                         data-status-color="{{ $report->status_color }}"
-                        data-photo="{{ $report->photos->first() ? asset('storage/' . $report->photos->first()->file_path) : '' }}">
+                        data-photo="{{ $report->photos->first() ? asset('storage/' . $report->photos->first()->file_path) : '' }}"
+                        data-remarks="{{ $report->validity?->notes ?? 'No remarks from admin yet.' }}">
                   <i class="bi bi-eye"></i>
                 </button>
                 @if($report->is_anonymous && (!$report->validity || $report->validity->status === 'pending'))
@@ -263,7 +269,7 @@
                           data-report-status="{{ $report->status }}"
                           data-report-description="{{ $report->description }}"
                           data-report-priority="{{ $report->priority ?? 'medium' }}"
-                          data-report-remarks="{{ $report->admin_remarks ?? '' }}"
+                          data-admin-remarks="{{ $report->validity?->notes ?? '' }}"
                           data-report-is-hidden="{{ $report->is_hidden ? '1' : '0' }}"
                           data-report-manual-priority="{{ $report->manual_priority ?? 'normal' }}"
                           title="Edit Report">
@@ -283,308 +289,20 @@
     </div>
     <div class="card-footer bg-white border-top">
       <div class="d-flex justify-content-between align-items-center">
-        <small class="text-muted">Showing {{ $reports->count() ?? 0 }} of {{ $totalReports ?? 0 }} reports</small>
-        <nav>
-          <ul class="pagination pagination-sm mb-0">
-            <li class="page-item disabled">
-              <a class="page-link" href="#"><i class="bi bi-chevron-left"></i></a>
-            </li>
-            <li class="page-item active"><a class="page-link" href="#">1</a></li>
-            <li class="page-item"><a class="page-link" href="#">2</a></li>
-            <li class="page-item"><a class="page-link" href="#">3</a></li>
-            <li class="page-item"><a class="page-link" href="#">4</a></li>
-            <li class="page-item"><a class="page-link" href="#">5</a></li>
-            <li class="page-item">
-              <a class="page-link" href="#"><i class="bi bi-chevron-right"></i></a>
-            </li>
-          </ul>
-        </nav>
-      </div>
-    </div>
-  </div>
-
-  <!-- Analytics Section -->
-  <div class="row g-4">
-    <div class="col-lg-8">
-      <div class="card shadow-sm border-0 h-100">
-        <div class="card-header bg-white border-bottom">
-          <h5 class="fw-bold mb-0">Reports by Category</h5>
-        </div>
-        <div class="card-body" style="min-height: 350px;">
-          <canvas id="categoryChart"></canvas>
-        </div>
-      </div>
-    </div>
-    <div class="col-lg-4">
-      <div class="card shadow-sm border-0 h-100">
-        <div class="card-header bg-white border-bottom">
-          <h5 class="fw-bold mb-0">Summary Statistics</h5>
-        </div>
-        <div class="card-body">
-          @forelse($categoryStats ?? [] as $category)
-          <div class="mb-4">
-            <div class="d-flex justify-content-between align-items-center mb-2">
-              <span class="text-muted">{{ $category->name }}</span>
-              <span class="fw-semibold">{{ $category->count }}</span>
-            </div>
-            <div class="progress" style="height: 8px;">
-              <div class="progress-bar bg-{{ $category->color }}" style="width: {{ $category->percentage }}%"></div>
-            </div>
-          </div>
-          @empty
-          <p class="text-muted text-center">No statistics available</p>
-          @endforelse
-        </div>
+        <small class="text-muted">Showing {{ $reports->firstItem() ?? 0 }} to {{ $reports->lastItem() ?? 0 }} of {{ $reports->total() ?? 0 }} reports</small>
+        {{ $reports->links('pagination::bootstrap-5') }}
       </div>
     </div>
   </div>
 
   <!-- View Report Modal -->
-  <div class="modal fade" id="viewReportModal" tabindex="-1">
-    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
-      <div class="modal-content">
-        <div class="modal-header">
-          <div>
-            <h5 class="modal-title fw-bold">Report Details</h5>
-            <small class="text-muted" id="modalSubmittedDate"></small>
-          </div>
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-        </div>
-        <div class="modal-body">
-          <div class="row g-4">
-            <!-- Report Info -->
-            <div class="col-12">
-              <div class="row">
-                <div class="col-md-6 mb-3">
-                  <h6 class="text-muted text-uppercase small mb-1">Violation Type</h6>
-                  <p class="fw-semibold mb-0" id="modalViolationType"></p>
-                </div>
-                <div class="col-md-6 mb-3">
-                  <h6 class="text-muted text-uppercase small mb-1">Status</h6>
-                  <span class="badge" id="modalStatus"></span>
-                </div>
-                <div class="col-md-6 mb-3">
-                  <h6 class="text-muted text-uppercase small mb-1">Submitted By</h6>
-                  <p class="mb-0" id="modalReporterName"></p>
-                </div>
-                <div class="col-md-6 mb-3">
-                  <h6 class="text-muted text-uppercase small mb-1">Date Submitted</h6>
-                  <p class="mb-0" id="modalDateSubmitted"></p>
-                </div>
-              </div>
-            </div>
-
-            <!-- Location -->
-            <div class="col-12">
-              <h6 class="text-muted text-uppercase small mb-2">
-                <i class="bi bi-geo-alt-fill me-1"></i>Location
-              </h6>
-              <p class="mb-2" id="modalLocation"></p>
-              <div style="position: relative;">
-                <button class="map-enlarge-btn" id="enlargeMapBtn" title="Enlarge map">
-                  <i class="bi bi-arrows-fullscreen"></i>
-                </button>
-                <div id="viewMap" class="mb-0 map-normal"></div>
-              </div>
-              <small class="text-muted">Interactive map showing report location</small>
-            </div>
-
-            <!-- Photo Evidence -->
-            <div class="col-12" id="photoSection" style="display: none;">
-              <h6 class="text-muted text-uppercase small mb-2">
-                <i class="bi bi-camera-fill me-1"></i>Photo Evidence
-              </h6>
-              <img id="modalPhoto" src="" alt="Report Evidence" class="report-image-preview shadow-sm">
-            </div>
-
-            <!-- Description -->
-            <div class="col-12">
-              <h6 class="text-muted text-uppercase small mb-2">
-                <i class="bi bi-file-text-fill me-1"></i>Description
-              </h6>
-              <p class="text-muted" id="modalDescription"></p>
-            </div>
-
-            <!-- Admin Remarks -->
-            <div class="col-12">
-              <div class="alert alert-light border mb-0">
-                <h6 class="text-muted text-uppercase small mb-2">
-                  <i class="bi bi-chat-square-text-fill me-1"></i>Admin Remarks
-                </h6>
-                <p class="mb-0" id="modalRemarks">No remarks yet.</p>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-        </div>
-      </div>
-    </div>
-  </div>
+  <x-modals.view-report />
 
   <!-- Validate Anonymous Report Modal -->
-  <div class="modal fade" id="validateReportModal" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered">
-      <div class="modal-content">
-        <div class="modal-header bg-light">
-          <div>
-            <h5 class="modal-title fw-bold">
-              <i class="bi bi-shield-check text-primary me-2"></i>Validate Report
-            </h5>
-            <small class="text-muted" id="statusModalReportId"></small>
-          </div>
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-        </div>
-        <form id="validateReportForm" method="POST">
-          @csrf
-          <div class="modal-body">
-            <div class="alert alert-info">
-              <i class="bi bi-info-circle me-2"></i>
-              <strong>Validation:</strong> Determine if this report is legitimate.
-              <ul class="mb-0 mt-2">
-                <li><strong>Valid:</strong> Report will be assigned to LGU and appear in public feed</li>
-                <li><strong>Invalid:</strong> Report will be hidden from feed</li>
-              </ul>
-            </div>
-
-            <div class="mb-3">
-              <label class="form-label fw-semibold">Validation Decision</label>
-              <div class="btn-group w-100" role="group">
-                <input type="radio" class="btn-check" name="validity_status" id="validOption" value="valid" required>
-                <label class="btn btn-outline-success" for="validOption">
-                  <i class="bi bi-check-circle me-1"></i>Valid Report
-                </label>
-
-                <input type="radio" class="btn-check" name="validity_status" id="invalidOption" value="invalid" required>
-                <label class="btn btn-outline-danger" for="invalidOption">
-                  <i class="bi bi-x-circle me-1"></i>Invalid Report
-                </label>
-              </div>
-            </div>
-
-            <div class="mb-3">
-              <label for="validationNotes" class="form-label fw-semibold">Notes <span class="text-muted">(Optional)</span></label>
-              <textarea class="form-control" name="notes" id="validationNotes" rows="3" placeholder="Add any notes about your validation decision..."></textarea>
-              <small class="text-muted">Explain why this report is valid or invalid.</small>
-            </div>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-            <button type="submit" class="btn btn-primary">
-              <i class="bi bi-shield-check me-1"></i>Submit Validation
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  </div>
+<x-modals.validate-report />
 
   <!-- Edit Report Modal (for all validated reports) -->
-  <div class="modal fade" id="updateStatusModal" tabindex="-1">
-    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
-      <div class="modal-content">
-        <div class="modal-header bg-light">
-          <div>
-            <h5 class="modal-title fw-bold">
-              <i class="bi bi-pencil-square text-success me-2"></i>Edit Report
-            </h5>
-            <small class="text-muted" id="updateStatusModalReportId"></small>
-          </div>
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-        </div>
-        <form id="editReportForm" method="POST">
-          @csrf
-          @method('PUT')
-          <div class="modal-body">
-            <!-- Report Status -->
-            <div class="mb-4">
-              <label for="reportStatus" class="form-label fw-semibold">
-                <i class="bi bi-flag me-1"></i>Report Status
-              </label>
-              <select class="form-select" name="status" id="reportStatus" required>
-                <option value="pending">Pending</option>
-                <option value="in-review">In Review</option>
-                <option value="in-progress">In Progress</option>
-                <option value="awaiting-confirmation">Awaiting Confirmation</option>
-                <option value="resolved">Resolved</option>
-              </select>
-            </div>
-
-            <!-- Description -->
-            <div class="mb-3">
-              <label for="reportDescription" class="form-label fw-semibold">
-                <i class="bi bi-file-text me-1"></i>Description
-              </label>
-              <textarea class="form-control" name="description" id="reportDescription" rows="4" required></textarea>
-            </div>
-
-            <!-- Admin Remarks -->
-            <div class="mb-3">
-              <label for="adminRemarks" class="form-label fw-semibold">
-                <i class="bi bi-chat-square-text me-1"></i>Admin Remarks
-              </label>
-              <textarea class="form-control" name="admin_remarks" id="adminRemarks" rows="3" placeholder="Add administrative notes..."></textarea>
-            </div>
-
-            <!-- Priority -->
-            <div class="mb-3">
-              <label for="reportPriority" class="form-label fw-semibold">
-                <i class="bi bi-exclamation-triangle me-1"></i>Priority
-              </label>
-              <select class="form-select" name="priority" id="reportPriority">
-                <option value="low">Low</option>
-                <option value="medium">Medium</option>
-                <option value="high">High</option>
-                <option value="urgent">Urgent</option>
-              </select>
-            </div>
-
-            <hr class="my-4">
-
-            <!-- Feed Visibility Controls -->
-            <div class="mb-3">
-              <div class="form-check form-switch">
-                <input class="form-check-input" type="checkbox" id="isHiddenSwitch" name="is_hidden" value="1">
-                <label class="form-check-label fw-semibold" for="isHiddenSwitch">
-                  <i class="bi bi-eye-slash me-1"></i>Hidden from public feed
-                </label>
-                <small class="text-muted d-block mt-1">When checked, this report will not appear in the public feed</small>
-              </div>
-            </div>
-
-            <!-- Manual Priority -->
-            <div class="mb-3">
-              <label for="manualPriority" class="form-label fw-semibold">
-                <i class="bi bi-sort-down me-1"></i>Feed Ranking Priority
-              </label>
-              <select class="form-select" name="manual_priority" id="manualPriority">
-                <option value="normal">Normal</option>
-                <option value="boosted">Boosted (show higher in feed)</option>
-                <option value="suppressed">Suppressed (show lower in feed)</option>
-              </select>
-              <small class="text-muted">Controls where this report appears in the feed regardless of upvotes</small>
-            </div>
-          </div>
-          <div class="modal-footer d-flex justify-content-between">
-            <div>
-              <!-- Delete button on the left -->
-              <button type="button" class="btn btn-danger" id="deleteReportBtn">
-                <i class="bi bi-trash me-1"></i>Delete Report
-              </button>
-            </div>
-            <div>
-              <!-- Action buttons on the right -->
-              <button type="button" class="btn btn-secondary me-2" data-bs-dismiss="modal">Cancel</button>
-              <button type="submit" class="btn btn-success">
-                <i class="bi bi-check-circle me-1"></i>Save Changes
-              </button>
-            </div>
-          </div>
-        </form>
-      </div>
-    </div>
-  </div>
+<x-modals.update-report />
 
   <!-- Reusable Map Lightbox Component for Enlarged Map View -->
   <x-map-lightbox />
@@ -595,12 +313,162 @@
 <!-- Load Leaflet library -->
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-<!-- Load our helper modules -->
 <script src="{{ asset('js/modal-helper.js') }}"></script>
 <script src="{{ asset('js/map-helper.js') }}"></script>
 <script src="{{ asset('js/map-lightbox.js') }}"></script>
 
 <script>
+  // =============================================================================
+  // ANALYTICS CHARTS
+  // =============================================================================
+
+  // Category Breakdown Chart (Doughnut) - Clickable
+  const categoryCtx = document.getElementById('categoryChart').getContext('2d');
+  const violationTypeIds = {!! json_encode($categoryStats->pluck('id')) !!};
+  
+  const categoryChart = new Chart(categoryCtx, {
+    type: 'doughnut',
+    data: {
+      labels: {!! json_encode($categoryStats->pluck('name')) !!},
+      datasets: [{
+        data: {!! json_encode($categoryStats->pluck('count')) !!},
+        backgroundColor: {!! json_encode($categoryStats->pluck('color')) !!},
+        borderWidth: 2,
+        borderColor: '#fff'
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          position: 'bottom',
+          labels: {
+            padding: 15,
+            font: { size: 11 }
+          }
+        },
+        tooltip: {
+          backgroundColor: 'rgba(0, 0, 0, 0.8)',
+          padding: 12,
+          cornerRadius: 6,
+          callbacks: {
+            label: function(context) {
+              const total = context.dataset.data.reduce((a, b) => a + b, 0);
+              const percent = ((context.parsed / total) * 100).toFixed(1);
+              return context.label + ': ' + context.parsed + ' (' + percent + '%)';
+            }
+          }
+        }
+      },
+      onClick: (event, elements) => {
+        if (elements.length > 0) {
+          const index = elements[0].index;
+          const violationTypeId = violationTypeIds[index];
+          window.location.href = '{{ route("admin-dashboard") }}?violation_type[]=' + violationTypeId;
+        }
+      }
+    }
+  });
+
+  // Status Distribution Chart (Bar)
+  const statusCtx = document.getElementById('statusChart').getContext('2d');
+  new Chart(statusCtx, {
+    type: 'bar',
+    data: {
+      labels: ['Pending', 'In Review', 'In Progress', 'Awaiting Conf.', 'Resolved'],
+      datasets: [{
+        label: 'Reports',
+        data: [
+          {{ $pendingReports }},
+          {{ \App\Models\Report::where('status', 'in-review')->count() }},
+          {{ \App\Models\Report::where('status', 'in-progress')->count() }},
+          {{ \App\Models\Report::where('status', 'awaiting-confirmation')->count() }},
+          {{ $resolvedReports }}
+        ],
+        backgroundColor: ['#ffc107', '#0dcaf0', '#0d6efd', '#6c757d', '#198754'],
+        borderRadius: 6
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: 'rgba(0, 0, 0, 0.8)',
+          padding: 12,
+          cornerRadius: 6
+        }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: { stepSize: 1 }
+        }
+      }
+    }
+  });
+
+  // Monthly Trend Chart (Line)
+  const monthlyCtx = document.getElementById('monthlyChart').getContext('2d');
+  @php
+    $monthlyData = \App\Models\Report::selectRaw('DATE_FORMAT(created_at, "%Y-%m") as month, COUNT(*) as count')
+      ->where('created_at', '>=', now()->subMonths(6))
+      ->groupBy('month')
+      ->orderBy('month')
+      ->pluck('count', 'month');
+    
+    $last6Months = collect();
+    for ($i = 5; $i >= 0; $i--) {
+      $month = now()->subMonths($i)->format('Y-m');
+      $last6Months[$month] = $monthlyData[$month] ?? 0;
+    }
+  @endphp
+
+  new Chart(monthlyCtx, {
+    type: 'line',
+    data: {
+      labels: {!! json_encode($last6Months->keys()->map(fn($m) => \Carbon\Carbon::parse($m)->format('M Y'))) !!},
+      datasets: [{
+        label: 'Reports',
+        data: {!! json_encode($last6Months->values()) !!},
+        borderColor: '#198754',
+        backgroundColor: 'rgba(25, 135, 84, 0.1)',
+        borderWidth: 3,
+        fill: true,
+        tension: 0.4,
+        pointBackgroundColor: '#198754',
+        pointBorderColor: '#fff',
+        pointBorderWidth: 2,
+        pointRadius: 5,
+        pointHoverRadius: 7
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: 'rgba(0, 0, 0, 0.8)',
+          padding: 12,
+          cornerRadius: 6
+        }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: { stepSize: 1 }
+        }
+      }
+    }
+  });
+
+  // =============================================================================
+  // MAP AND MODAL HANDLERS
+  // =============================================================================
+
   // Map variables
   let adminMap = null;
   let adminMarker = null;
@@ -619,6 +487,7 @@
       const status = this.dataset.status;
       const statusColor = this.dataset.statusColor;
       const photo = this.dataset.photo;
+      const remarks = this.dataset.remarks;
 
       // Populate modal fields
       document.getElementById('modalViolationType').textContent = violationType;
@@ -628,6 +497,7 @@
       document.getElementById('modalDateSubmitted').textContent = date;
       document.getElementById('modalStatus').textContent = status;
       document.getElementById('modalStatus').className = 'badge bg-' + statusColor;
+      document.getElementById('modalAdminRemarks').textContent = remarks || 'No remarks from admin yet.';
 
       // Handle photo display
       const photoSection = document.getElementById('photoSection');
@@ -892,6 +762,21 @@
         }
       },
       barThickness: 28
+    }
+  });
+
+  // Auto-open modal if URL has hash anchor (from notifications)
+  window.addEventListener('load', function() {
+    const hash = window.location.hash;
+    if (hash && hash.startsWith('#report-')) {
+      const reportId = hash.replace('#report-', '');
+      // Find the view button for this report and click it
+      const viewButton = document.querySelector(`[data-bs-target="#viewReportModal"][data-report-id="${reportId}"]`);
+      if (viewButton) {
+        viewButton.click();
+        // Remove hash from URL after opening modal
+        history.replaceState(null, null, ' ');
+      }
     }
   });
 </script>

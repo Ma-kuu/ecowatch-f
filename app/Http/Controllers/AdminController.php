@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Models\Notification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
@@ -59,7 +60,7 @@ class AdminController extends Controller
         $lguCount = User::where('role', 'lgu')->count();
         $userCount = User::where('role', 'user')->count();
 
-        return view('auth.admin-settings', compact(
+        return view('settings.admin-settings', compact(
             'users',
             'totalUsers',
             'activeUsers',
@@ -95,6 +96,48 @@ class AdminController extends Controller
 
         return redirect()->route('admin-settings')
             ->with('success', 'User created successfully.');
+    }
+
+    /**
+     * Update user information.
+     */
+    public function updateUser(Request $request, $id)
+    {
+        $user = User::findOrFail($id);
+
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email,' . $id],
+            'password' => ['nullable', 'string', 'min:8'],
+            'phone' => ['nullable', 'string', 'max:20'],
+            'role' => ['required', Rule::in(['admin', 'lgu', 'user'])],
+            'lgu_id' => ['required_if:role,lgu', 'nullable', 'exists:lgus,id'],
+            'is_active' => ['nullable', 'boolean'],
+        ]);
+
+        // Prevent deactivating self
+        if ($user->id === auth()->id() && !$request->has('is_active')) {
+            return redirect()->route('admin-settings')
+                ->with('error', 'You cannot deactivate your own account.');
+        }
+
+        // Update user data
+        $user->name = $validated['name'];
+        $user->email = $validated['email'];
+        $user->phone = $validated['phone'] ?? null;
+        $user->role = $validated['role'];
+        $user->lgu_id = $validated['lgu_id'] ?? null;
+        $user->is_active = $request->has('is_active');
+
+        // Only update password if provided
+        if (!empty($validated['password'])) {
+            $user->password = Hash::make($validated['password']);
+        }
+
+        $user->save();
+
+        return redirect()->route('admin-settings')
+            ->with('success', 'User updated successfully.');
     }
 
     /**
@@ -192,6 +235,22 @@ class AdminController extends Controller
                 'assigned_lgu_id' => $report->barangay->lgu_id,
                 'assigned_at' => now(),
             ]);
+
+            // Notify LGU users about new validated report
+            $lguUsers = User::where('lgu_id', $report->barangay->lgu_id)
+                ->where('role', 'lgu')
+                ->where('is_active', true)
+                ->get();
+
+            foreach ($lguUsers as $lguUser) {
+                Notification::create([
+                    'user_id' => $lguUser->id,
+                    'report_id' => $report->id,
+                    'type' => 'new_report',
+                    'title' => 'New Report Assigned',
+                    'message' => "A new report {$report->report_id} has been validated and assigned to your area.",
+                ]);
+            }
         }
         // If no barangay, try auto-assign by coordinates
         elseif ($report->latitude && $report->longitude) {
@@ -223,10 +282,20 @@ class AdminController extends Controller
             'status' => $validated['status'],
             'description' => $validated['description'],
             'priority' => $validated['priority'] ?? 'medium',
-            'admin_remarks' => $validated['admin_remarks'],
             'is_hidden' => $request->boolean('is_hidden'),
             'manual_priority' => $validated['manual_priority'] ?? 'normal',
         ]);
+
+        // Update or create admin remarks in validity table
+        $report->validity()->updateOrCreate(
+            ['report_id' => $report->id],
+            [
+                'notes' => $validated['admin_remarks'] ?? null,
+                'reviewed_by' => auth()->id(),
+                'reviewed_at' => now(),
+                'status' => $report->validity?->status ?? 'valid', // Preserve existing status or default to valid
+            ]
+        );
 
         return redirect()->route('admin-dashboard')
             ->with('success', "Report {$report->report_id} has been updated successfully.");

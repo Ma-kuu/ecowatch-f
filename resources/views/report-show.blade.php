@@ -98,12 +98,12 @@
               <div class="mb-3">
                 <label class="form-label fw-medium" style="font-size: 14px;">Upload Photo <span class="text-muted">(Optional)</span></label>
                 <input type="file" name="photo" accept="image/*" class="form-control" id="photoInput">
-                <small class="text-muted" id="fileName"></small>
+                <small class="text-muted">Max 10MB</small>
               </div>
             </div>
 
             <!-- Right Column - Map (appears second on mobile) -->
-            <div class="col-lg-6">
+            <div class="col-lg-6" v-pre>
               <button type="button" id="getLocationBtn" class="btn btn-outline-success w-100 mb-3">
                 <i class="bi bi-crosshair me-2"></i>Use My Current Location
               </button>
@@ -231,21 +231,13 @@
 
     // Validation
     if (!marker) {
-      return window.showNotification({
-        title: 'Location Required',
-        message: 'Please pin a location on the map.',
-        type: 'warning',
-        duration: 4000
-      });
+      showToast('Please pin a location on the map', 'warning', 4000);
+      return;
     }
 
     if (!document.getElementById('barangaySelect').value) {
-      return window.showNotification({
-        title: 'Barangay Required',
-        message: 'Please select a barangay.',
-        type: 'warning',
-        duration: 4000
-      });
+      showToast('Please select a barangay', 'warning', 4000);
+      return;
     }
 
     // Submit
@@ -288,12 +280,7 @@
     .then(data => {
       if (data.success) {
         // Show success notification
-        window.showNotification({
-          title: 'Report Submitted Successfully!',
-          message: data.message,
-          type: 'success',
-          duration: 5000
-        });
+        showToast('Report submitted successfully!', 'success', 5000);
 
         // Reset form
         reportForm.reset();
@@ -315,12 +302,7 @@
     })
     .catch(error => {
       console.error('Error:', error);
-      window.showNotification({
-        title: 'Submission Failed',
-        message: error.message || 'Please try again.',
-        type: 'error',
-        duration: 5000
-      });
+      showToast(error.message || 'Submission failed. Please try again.', 'danger', 5000);
 
       submitBtn.innerHTML = originalText;
       submitBtn.disabled = false;

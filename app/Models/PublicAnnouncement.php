@@ -8,15 +8,16 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class PublicAnnouncement extends Model
 {
     protected $fillable = [
+        'lgu_id',
+        'created_by',
         'title',
         'content',
         'type',
-        'lgu_id',
-        'created_by',
         'is_active',
         'is_pinned',
         'published_at',
         'expires_at',
+        'reactions_count',
     ];
 
     protected $casts = [
@@ -24,6 +25,7 @@ class PublicAnnouncement extends Model
         'is_pinned' => 'boolean',
         'published_at' => 'datetime',
         'expires_at' => 'datetime',
+        'reactions_count' => 'integer',
     ];
 
     /**

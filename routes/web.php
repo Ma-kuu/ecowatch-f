@@ -8,6 +8,10 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\PublicFeedController;
+use App\Http\Controllers\ReportStatusController;
+use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\UserSettingsController;
+use App\Http\Controllers\LguSettingsController;
 use Illuminate\Support\Facades\Route;
 
 // Public Pages
@@ -22,6 +26,10 @@ Route::get('/about', function () {
 Route::get('/feed', [PublicFeedController::class, 'index'])->name('feed');
 Route::post('/feed/reports/{report}/upvote', [PublicFeedController::class, 'toggleUpvote'])->name('feed.upvote');
 Route::post('/feed/reports/{report}/flag', [PublicFeedController::class, 'flagReport'])->name('feed.flag')->middleware('auth');
+
+// Report Status Lookup (Public)
+Route::get('/report-status', [ReportStatusController::class, 'index'])->name('report-status');
+Route::post('/report-status', [ReportStatusController::class, 'lookup'])->name('report-status.lookup');
 
 // Report Pages
 Route::get('/report-form', function () {
@@ -80,6 +88,19 @@ Route::middleware('auth')->group(function () {
     // LGU Report Mark Fixed Route
     Route::post('/lgu/reports/{id}/mark-fixed', [DashboardController::class, 'markReportFixed'])
         ->name('lgu.reports.mark-fixed');
+    
+    Route::post('/lgu/reports/{id}/mark-in-progress', [DashboardController::class, 'markReportInProgress'])
+        ->name('lgu.reports.mark-in-progress');
+
+    // LGU Announcement Routes
+    Route::get('/lgu/announcements', [DashboardController::class, 'indexAnnouncements'])
+        ->name('lgu.announcements.index');
+    Route::post('/lgu/announcements', [DashboardController::class, 'storeAnnouncement'])
+        ->name('lgu.announcements.store');
+    Route::put('/lgu/announcements/{id}', [DashboardController::class, 'updateAnnouncement'])
+        ->name('lgu.announcements.update');
+    Route::delete('/lgu/announcements/{id}', [DashboardController::class, 'destroyAnnouncement'])
+        ->name('lgu.announcements.destroy');
 
     // Admin Settings Routes
     Route::get('/admin-settings', [AdminController::class, 'settings'])
@@ -87,6 +108,9 @@ Route::middleware('auth')->group(function () {
 
     Route::post('/admin/users', [AdminController::class, 'createUser'])
         ->name('admin.users.create');
+
+    Route::put('/admin/users/{id}', [AdminController::class, 'updateUser'])
+        ->name('admin.users.update');
 
     Route::post('/admin/users/{id}/toggle-status', [AdminController::class, 'toggleUserStatus'])
         ->name('admin.users.toggle-status');
@@ -117,4 +141,32 @@ Route::middleware(['auth'])->group(function () {
 
     Route::post('/user/reports/{id}/reject', [UserController::class, 'rejectReportResolution'])
         ->name('user.reports.reject');
+
+    // Notification Routes
+    Route::get('/notifications', [NotificationController::class, 'index'])
+        ->name('notifications.index');
+    Route::post('/notifications/{id}/read', [NotificationController::class, 'markAsRead'])
+        ->name('notifications.read');
+    Route::post('/notifications/read-all', [NotificationController::class, 'markAllAsRead'])
+        ->name('notifications.read-all');
+
+    // User Settings Routes
+    Route::get('/settings', [UserSettingsController::class, 'index'])
+        ->name('user.settings');
+    Route::post('/settings/profile', [UserSettingsController::class, 'updateProfile'])
+        ->name('user.settings.profile');
+    Route::post('/settings/password', [UserSettingsController::class, 'changePassword'])
+        ->name('user.settings.password');
+
+    // LGU Settings Routes
+    Route::get('/lgu/settings', [LguSettingsController::class, 'index'])
+        ->name('lgu.settings');
+    Route::post('/lgu/settings/profile', [LguSettingsController::class, 'updateProfile'])
+        ->name('lgu.settings.profile');
+    Route::post('/lgu/settings/password', [LguSettingsController::class, 'changePassword'])
+        ->name('lgu.settings.password');
+
+    // Admin Settings Routes (User Management)
+    Route::get('/admin/settings', [AdminController::class, 'index'])
+        ->name('admin.settings');
 });

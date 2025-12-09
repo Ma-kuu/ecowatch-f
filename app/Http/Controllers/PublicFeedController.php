@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Report;
 use App\Models\ViolationType;
 use App\Models\Lgu;
+use App\Models\PublicAnnouncement;
 use Illuminate\Http\Request;
 
 class PublicFeedController extends Controller
@@ -134,8 +135,19 @@ class PublicFeedController extends Controller
             'colors' => ['#0dcaf0', '#0d6efd', '#198754'], // info, primary, success
         ];
 
+        // Fetch public announcements (pinned first, then by date)
+        $announcements = PublicAnnouncement::with('lgu')
+            ->where(function($q) {
+                $q->whereNull('expires_at')
+                  ->orWhere('expires_at', '>=', now());
+            })
+            ->orderByDesc('is_pinned')
+            ->orderByDesc('created_at')
+            ->paginate(10);
+
         return view('feed', [
             'feedReports' => $feedReports,
+            'announcements' => $announcements,
             'topCategories' => $topCategories,
             'violationTypes' => $violationTypes,
             'lgus' => $lgus,
@@ -219,6 +231,18 @@ class PublicFeedController extends Controller
                 'reason' => 'Inappropriate content',
                 'created_at' => now(),
             ]);
+
+            // Notify all admins about flagged report
+            $admins = \App\Models\User::where('role', 'admin')->get();
+            foreach ($admins as $admin) {
+                \App\Models\Notification::create([
+                    'user_id' => $admin->id,
+                    'report_id' => $report->id,
+                    'title' => 'Report Flagged',
+                    'message' => "Report {$report->report_id} has been flagged as inappropriate by {$user->name}",
+                    'type' => 'report_flagged',
+                ]);
+            }
 
             return response()->json([
                 'success' => true,

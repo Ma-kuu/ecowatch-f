@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Report;
 use App\Models\ReportUpdate;
+use App\Models\Notification;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -63,6 +65,24 @@ class UserController extends Controller
                 'remarks' => 'User confirmed that the issue has been resolved.',
                 'is_public' => true,
             ]);
+
+            // Notify LGU users that report is fully resolved
+            if ($report->assigned_lgu_id) {
+                $lguUsers = User::where('lgu_id', $report->assigned_lgu_id)
+                    ->where('role', 'lgu')
+                    ->where('is_active', true)
+                    ->get();
+
+                foreach ($lguUsers as $lguUser) {
+                    Notification::create([
+                        'user_id' => $lguUser->id,
+                        'report_id' => $report->id,
+                        'type' => 'report_confirmed',
+                        'title' => 'Report Confirmed as Resolved',
+                        'message' => "Report {$report->report_id} has been confirmed as resolved by the user.",
+                    ]);
+                }
+            }
 
             // Log the action
             Log::info('User confirmed report resolution', [
@@ -132,6 +152,36 @@ class UserController extends Controller
                 'remarks' => 'User rejected resolution: ' . $request->rejection_reason,
                 'is_public' => true,
             ]);
+
+            // Notify LGU users that resolution was rejected
+            if ($report->assigned_lgu_id) {
+                $lguUsers = User::where('lgu_id', $report->assigned_lgu_id)
+                    ->where('role', 'lgu')
+                    ->where('is_active', true)
+                    ->get();
+
+                foreach ($lguUsers as $lguUser) {
+                    Notification::create([
+                        'user_id' => $lguUser->id,
+                        'report_id' => $report->id,
+                        'type' => 'report_rejected',
+                        'title' => 'Resolution Rejected',
+                        'message' => "Report {$report->report_id} resolution was rejected by the user. Reason: {$request->rejection_reason}",
+                    ]);
+                }
+            }
+
+            // Notify admins about the dispute
+            $admins = User::where('role', 'admin')->get();
+            foreach ($admins as $admin) {
+                Notification::create([
+                    'user_id' => $admin->id,
+                    'report_id' => $report->id,
+                    'type' => 'report_disputed',
+                    'title' => 'Report Resolution Disputed',
+                    'message' => "Report {$report->report_id} resolution was disputed by " . Auth::user()->name . ". Reason: {$request->rejection_reason}",
+                ]);
+            }
 
             // Log the action
             Log::info('User rejected report resolution', [

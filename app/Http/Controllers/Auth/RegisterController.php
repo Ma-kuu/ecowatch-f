@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Models\Lgu;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -15,7 +16,11 @@ class RegisterController extends Controller
      */
     public function showRegistrationForm()
     {
-        return view('register');
+        $lgus = Lgu::where('is_active', true)
+            ->orderBy('name')
+            ->get();
+        
+        return view('register', compact('lgus'));
     }
 
     /**
@@ -32,6 +37,7 @@ class RegisterController extends Controller
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
             'phone' => ['nullable', 'string', 'max:20'],
+            'lgu_id' => ['required', 'exists:lgus,id'],
         ]);
 
         // Create the user with 'user' role only
@@ -42,6 +48,7 @@ class RegisterController extends Controller
             'email' => $validated['email'],
             'password' => Hash::make($validated['password']),
             'phone' => $validated['phone'] ?? null,
+            'lgu_id' => $validated['lgu_id'], // User's home LGU for announcements
             'role' => 'user', // Always 'user' for public registration
             'is_active' => true,
         ]);

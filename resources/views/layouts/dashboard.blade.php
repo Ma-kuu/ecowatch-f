@@ -77,6 +77,31 @@
     .navbar-nav .nav-link.active {
       color: #198754 !important;
     }
+    
+    /* Mobile modal improvements */
+    @media (max-width: 767.98px) {
+      .modal-dialog {
+        margin: 0.5rem;
+        max-height: calc(100vh - 1rem);
+      }
+      .modal-dialog-centered {
+        min-height: auto;
+        align-items: flex-start;
+        margin-top: 1rem;
+      }
+      .modal-content {
+        max-height: calc(100vh - 2rem);
+        display: flex;
+        flex-direction: column;
+      }
+      .modal-body {
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+      .modal-dialog-scrollable .modal-body {
+        max-height: calc(100vh - 200px);
+      }
+    }
     @yield('additional-styles')
   </style>
 </head>
@@ -100,6 +125,50 @@
           @endif
           @yield('nav-links')
           <li class="nav-item"><a class="nav-link text-dark {{ request()->routeIs('feed') ? 'active' : '' }}" href="{{ route('feed') }}">Feed</a></li>
+          
+          @if(auth()->user()->role === 'lgu')
+          <li class="nav-item">
+            <a class="nav-link text-dark" 
+               href="#" 
+               data-bs-toggle="modal" 
+               data-bs-target="#createAnnouncementModal"
+               title="Create Announcement">
+              <i class="bi bi-megaphone-fill" style="font-size: 20px;"></i>
+            </a>
+          </li>
+          @endif
+          
+          <li class="nav-item">
+            <a class="nav-link text-dark position-relative {{ request()->routeIs('notifications.index') ? 'active' : '' }}" 
+               href="{{ route('notifications.index') }}" 
+               title="Notifications">
+              <i class="bi bi-bell" style="font-size: 20px;"></i>
+              @php
+                $unreadCount = \App\Models\Notification::where('user_id', auth()->id())->whereNull('read_at')->count();
+              @endphp
+              @if($unreadCount > 0)
+                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" 
+                      style="font-size: 10px; padding: 3px 6px;">
+                  {{ $unreadCount > 9 ? '9+' : $unreadCount }}
+                </span>
+              @endif
+            </a>
+          </li>
+          <li class="nav-item">
+            @if(auth()->user()->role === 'admin')
+              <a class="nav-link text-dark {{ request()->routeIs('admin.settings') ? 'active' : '' }}" href="{{ route('admin.settings') }}" title="Settings">
+                <i class="bi bi-gear-fill" style="font-size: 20px;"></i>
+              </a>
+            @elseif(auth()->user()->role === 'lgu')
+              <a class="nav-link text-dark {{ request()->routeIs('lgu.settings') ? 'active' : '' }}" href="{{ route('lgu.settings') }}" title="Settings">
+                <i class="bi bi-gear-fill" style="font-size: 20px;"></i>
+              </a>
+            @else
+              <a class="nav-link text-dark {{ request()->routeIs('user.settings') ? 'active' : '' }}" href="{{ route('user.settings') }}" title="Settings">
+                <i class="bi bi-gear-fill" style="font-size: 20px;"></i>
+              </a>
+            @endif
+          </li>
           <li class="nav-item ms-lg-3">
             <form method="POST" action="{{ route('logout') }}" class="d-inline">
               @csrf
@@ -132,9 +201,6 @@
   <!-- Bootstrap JS -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
-  <!-- Toast Notification System -->
-  @include('partials.toast-notification')
-
   <!-- Shared map lightbox overlay for dashboard pages -->
   <div class="map-lightbox-overlay" id="mapLightboxOverlay"></div>
   <div class="map-lightbox-container" id="mapLightboxContainer">
@@ -145,5 +211,32 @@
   </div>
 
   @stack('scripts')
+  
+  <!-- Vue App for Toast Notifications -->
+  <div id="vue-app">
+    <toast-notification></toast-notification>
+  </div>
+  
+  @vite(['resources/js/app.js'])
+  
+  <!-- Auto-show toast from session -->
+  @if(session('success') || session('error') || session('warning') || session('info'))
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      @if(session('success'))
+        showToast('{{ session('success') }}', 'success');
+      @endif
+      @if(session('error'))
+        showToast('{{ session('error') }}', 'danger');
+      @endif
+      @if(session('warning'))
+        showToast('{{ session('warning') }}', 'warning');
+      @endif
+      @if(session('info'))
+        showToast('{{ session('info') }}', 'info');
+      @endif
+    });
+  </script>
+  @endif
 </body>
 </html>

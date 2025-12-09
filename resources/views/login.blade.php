@@ -79,6 +79,12 @@
           <span class="text-muted" style="font-size: 14px;">Don't have an account?</span>
           <a href="{{ route('register') }}" class="text-success text-decoration-none fw-medium ms-1">Sign up</a>
         </div>
+
+        <div class="text-center mt-3">
+          <a href="{{ route('report-status') }}" class="text-muted text-decoration-none" style="font-size: 14px;">
+            <i class="bi bi-search me-1"></i>Check report status
+          </a>
+        </div>
       </div>
     </div>
   </main>

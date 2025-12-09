@@ -83,6 +83,23 @@
           </div>
 
           <div class="mb-3">
+            <label class="form-label fw-medium" style="font-size: 14px;">
+              Your Municipality/City <span class="text-danger">*</span>
+            </label>
+            <select id="lgu_id" name="lgu_id" class="form-select form-select-lg" required>
+              <option value="">Select your municipality...</option>
+              @foreach($lgus ?? [] as $lgu)
+                <option value="{{ $lgu->id }}" {{ old('lgu_id') == $lgu->id ? 'selected' : '' }}>
+                  {{ $lgu->name }}
+                </option>
+              @endforeach
+            </select>
+            <div class="form-text" style="font-size: 12px;">
+              <i class="bi bi-info-circle"></i> You'll receive announcements from your local government. You can still report issues anywhere in Davao del Norte.
+            </div>
+          </div>
+
+          <div class="mb-3">
             <label class="form-label fw-medium" style="font-size: 14px;">Password</label>
             <div class="input-group">
               <input type="password" id="password" name="password" class="form-control form-control-lg" placeholder="Min 6 characters" required>

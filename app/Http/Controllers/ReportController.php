@@ -80,6 +80,18 @@ class ReportController extends Controller
                 'priority' => 'low',
             ]);
 
+            // Notify all admins about new report
+            $admins = \App\Models\User::where('role', 'admin')->get();
+            foreach ($admins as $admin) {
+                \App\Models\Notification::create([
+                    'user_id' => $admin->id,
+                    'report_id' => $report->id,
+                    'title' => 'New Report Submitted',
+                    'message' => "New report {$report->report_id} has been submitted by " . Auth::user()->name,
+                    'type' => 'new_report',
+                ]);
+            }
+
             // Auto-assign to nearest LGU if coordinates provided
             if ($report->latitude && $report->longitude) {
                 try {
@@ -169,7 +181,8 @@ class ReportController extends Controller
             }
         }
 
-        return view('report-show', compact('report'));
+        $violationTypes = \App\Models\ViolationType::where('is_active', true)->orderBy('name')->get();
+        return view('report-show', compact('report', 'violationTypes'));
     }
 
     /**

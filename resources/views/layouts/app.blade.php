@@ -38,10 +38,10 @@
 
             @auth
               <li class="nav-item dropdown">
-                <a class="nav-link dropdown-toggle text-dark" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
+                <a class="nav-link dropdown-toggle text-dark" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                   {{ Auth::user()->name }}
                 </a>
-                <ul class="dropdown-menu">
+                <ul class="dropdown-menu dropdown-menu-end">
                   @if(Auth::user()->role === 'admin')
                     <li><a class="dropdown-item" href="{{ route('admin-dashboard') }}">Dashboard</a></li>
                     <li><a class="dropdown-item" href="{{ route('admin-settings') }}">Settings</a></li>
@@ -90,12 +90,6 @@
   <!-- Vue Notification Container -->
   <div id="vue-notifications"></div>
 
-  <!-- Bootstrap JS -->
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-
-  <!-- Toast Notification System -->
-  @include('partials.toast-notification')
-
   <!-- Shared map lightbox overlay for public pages -->
   <div class="map-lightbox-overlay" id="mapLightboxOverlay"></div>
   <div class="map-lightbox-container" id="mapLightboxContainer">
@@ -106,5 +100,91 @@
   </div>
 
   @stack('scripts')
+  
+  <!-- Vue App for Toast Notifications -->
+  <div id="vue-app">
+    <toast-notification></toast-notification>
+  </div>
+  
+  @vite(['resources/js/app.js'])
+  
+  <!-- Bootstrap JS (loaded after Vue to prevent conflicts) -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  
+  <!-- Initialize Bootstrap dropdowns manually -->
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      console.log('Initializing dropdowns...');
+      
+      // Check if Bootstrap is loaded
+      if (typeof bootstrap === 'undefined') {
+        console.error('Bootstrap is not loaded!');
+        return;
+      }
+      
+      // Initialize all dropdowns
+      var dropdownElementList = [].slice.call(document.querySelectorAll('[data-bs-toggle="dropdown"]'));
+      console.log('Found ' + dropdownElementList.length + ' dropdown elements');
+      
+      var dropdownList = dropdownElementList.map(function (dropdownToggleEl) {
+        console.log('Initializing dropdown:', dropdownToggleEl);
+        return new bootstrap.Dropdown(dropdownToggleEl);
+      });
+      
+      // Add click event listener as fallback
+      var userDropdown = document.getElementById('userDropdown');
+      if (userDropdown) {
+        console.log('Adding click listener to userDropdown');
+        userDropdown.addEventListener('click', function(e) {
+          e.preventDefault();
+          e.stopPropagation();
+          console.log('Dropdown clicked!');
+          var menu = this.nextElementSibling;
+          if (menu && menu.classList.contains('dropdown-menu')) {
+            // Close all other dropdowns first
+            document.querySelectorAll('.dropdown-menu.show').forEach(function(otherMenu) {
+              if (otherMenu !== menu) {
+                otherMenu.classList.remove('show');
+              }
+            });
+            
+            // Toggle this dropdown
+            menu.classList.toggle('show');
+            console.log('Toggled dropdown menu');
+          }
+        });
+        
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(e) {
+          if (!userDropdown.contains(e.target)) {
+            var menu = userDropdown.nextElementSibling;
+            if (menu && menu.classList.contains('dropdown-menu')) {
+              menu.classList.remove('show');
+            }
+          }
+        });
+      }
+    });
+  </script>
+  
+  <!-- Auto-show toast from session -->
+  @if(session('success') || session('error') || session('warning') || session('info'))
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      @if(session('success'))
+        showToast('{{ session('success') }}', 'success');
+      @endif
+      @if(session('error'))
+        showToast('{{ session('error') }}', 'danger');
+      @endif
+      @if(session('warning'))
+        showToast('{{ session('warning') }}', 'warning');
+      @endif
+      @if(session('info'))
+        showToast('{{ session('info') }}', 'info');
+      @endif
+    });
+  </script>
+  @endif
 </body>
 </html>

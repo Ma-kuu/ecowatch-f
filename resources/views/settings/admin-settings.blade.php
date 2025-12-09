@@ -4,10 +4,6 @@
 
 @section('dashboard-home', route('admin-dashboard'))
 
-@section('nav-links')
-  <li class="nav-item"><a class="nav-link text-dark {{ request()->routeIs('admin-settings') ? 'active' : '' }}" href="{{ route('admin-settings') }}">Settings</a></li>
-@endsection
-
 @section('footer-title', 'EcoWatch Admin Panel')
 
 @section('additional-styles')
@@ -252,13 +248,19 @@
                 </span>
               </td>
               <td class="py-3 text-center table-actions">
-                <form action="{{ route('admin.users.toggle-status', $user->id) }}" method="POST" style="display: inline;">
-                  @csrf
-                  <button type="submit" class="btn btn-sm btn-outline-{{ $user->is_active ? 'warning' : 'success' }}"
-                          title="{{ $user->is_active ? 'Deactivate' : 'Activate' }}">
-                    <i class="bi bi-person-{{ $user->is_active ? 'x' : 'check' }}"></i>
-                  </button>
-                </form>
+                <button class="btn btn-sm btn-outline-primary me-1"
+                        data-bs-toggle="modal"
+                        data-bs-target="#editUserModal"
+                        data-user-id="{{ $user->id }}"
+                        data-user-name="{{ $user->name }}"
+                        data-user-email="{{ $user->email }}"
+                        data-user-phone="{{ $user->phone }}"
+                        data-user-role="{{ $user->role }}"
+                        data-user-lgu="{{ $user->lgu_id }}"
+                        data-user-active="{{ $user->is_active ? '1' : '0' }}"
+                        title="Edit User">
+                  <i class="bi bi-pencil"></i>
+                </button>
                 <form action="{{ route('admin.users.delete', $user->id) }}" method="POST" style="display: inline;"
                       onsubmit="return confirm('Are you sure you want to delete this user?');">
                   @csrf
@@ -288,7 +290,7 @@
 
   <!-- Add/Edit User Modal -->
   <div class="modal fade" id="userModal" tabindex="-1" aria-labelledby="userModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
       <div class="modal-content">
         <div class="modal-header" style="background-color: #f8f9fa; border-bottom: 2px solid #198754;">
           <div>
@@ -352,6 +354,91 @@
       </div>
     </div>
   </div>
+
+  <!-- Edit User Modal -->
+  <div class="modal fade" id="editUserModal" tabindex="-1" aria-labelledby="editUserModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+      <div class="modal-content">
+        <div class="modal-header" style="background-color: #f8f9fa; border-bottom: 2px solid #198754;">
+          <div>
+            <h5 class="modal-title fw-bold" id="editUserModalLabel">
+              <i class="bi bi-pencil-square me-2"></i>
+              Edit User
+            </h5>
+            <small class="text-muted">Update user information</small>
+          </div>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <form id="editUserForm" method="POST">
+            @csrf
+            @method('PUT')
+            
+            <div class="mb-3">
+              <label for="editUserName" class="form-label fw-semibold">Name</label>
+              <input type="text" class="form-control" name="name" id="editUserName" required>
+            </div>
+            
+            <div class="mb-3">
+              <label for="editUserEmail" class="form-label fw-semibold">Email</label>
+              <input type="email" class="form-control" name="email" id="editUserEmail" required>
+            </div>
+            
+            <div class="mb-3">
+              <label for="editUserPassword" class="form-label fw-semibold">New Password <span class="text-muted">(leave blank to keep current)</span></label>
+              <input type="password" class="form-control" name="password" id="editUserPassword" placeholder="Enter new password (min. 8 characters)" minlength="8">
+            </div>
+            
+            <div class="mb-3">
+              <label for="editUserPhone" class="form-label fw-semibold">Phone <span class="text-muted">(optional)</span></label>
+              <input type="text" class="form-control" name="phone" id="editUserPhone">
+            </div>
+            
+            <div class="mb-3">
+              <label for="editUserRole" class="form-label fw-semibold">Role</label>
+              <select class="form-select" name="role" id="editUserRole" required onchange="toggleEditLguField()">
+                <option value="admin">Admin</option>
+                <option value="lgu">LGU</option>
+                <option value="user">User</option>
+              </select>
+            </div>
+            
+            <div class="mb-3" id="editLguField" style="display: none;">
+              <label for="editUserLgu" class="form-label fw-semibold">Assigned LGU</label>
+              <select class="form-select" name="lgu_id" id="editUserLgu">
+                <option value="">Select LGU...</option>
+                @foreach(\App\Models\Lgu::where('is_active', true)->orderBy('name')->get() as $lgu)
+                  <option value="{{ $lgu->id }}">{{ $lgu->name }}</option>
+                @endforeach
+              </select>
+            </div>
+
+            <hr class="my-4">
+
+            <div class="mb-3">
+              <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" id="editUserActive" name="is_active" value="1" checked>
+                <label class="form-check-label fw-semibold" for="editUserActive">
+                  <i class="bi bi-person-check me-1"></i>Account Active
+                </label>
+                <small class="text-muted d-block mt-1">Uncheck to deactivate this user account</small>
+              </div>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+            <i class="bi bi-x-circle me-1"></i>
+            Cancel
+          </button>
+          <button type="submit" form="editUserForm" class="btn btn-success">
+            <i class="bi bi-check-circle me-1"></i>
+            Update User
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
 @endsection
 
 @push('scripts')
@@ -372,10 +459,54 @@
     }
   }
 
+  // Toggle LGU field for edit modal
+  function toggleEditLguField() {
+    const roleSelect = document.getElementById('editUserRole');
+    const lguField = document.getElementById('editLguField');
+    const lguSelect = document.getElementById('editUserLgu');
+
+    if (roleSelect.value === 'lgu') {
+      lguField.style.display = 'block';
+      lguSelect.required = true;
+    } else {
+      lguField.style.display = 'none';
+      lguSelect.required = false;
+      lguSelect.value = '';
+    }
+  }
+
   // Reset form when modal is closed
   document.getElementById('userModal').addEventListener('hidden.bs.modal', function () {
     document.getElementById('userForm').reset();
     document.getElementById('lguField').style.display = 'none';
+  });
+
+  // Populate edit modal when edit button is clicked
+  document.querySelectorAll('[data-bs-target="#editUserModal"]').forEach(button => {
+    button.addEventListener('click', function() {
+      const userId = this.dataset.userId;
+      const userName = this.dataset.userName;
+      const userEmail = this.dataset.userEmail;
+      const userPhone = this.dataset.userPhone;
+      const userRole = this.dataset.userRole;
+      const userLgu = this.dataset.userLgu;
+      const userActive = this.dataset.userActive === '1';
+
+      // Populate form fields
+      document.getElementById('editUserName').value = userName;
+      document.getElementById('editUserEmail').value = userEmail;
+      document.getElementById('editUserPhone').value = userPhone || '';
+      document.getElementById('editUserPassword').value = ''; // Always empty for security
+      document.getElementById('editUserRole').value = userRole;
+      document.getElementById('editUserLgu').value = userLgu || '';
+      document.getElementById('editUserActive').checked = userActive;
+
+      // Show/hide LGU field based on role
+      toggleEditLguField();
+
+      // Update form action
+      document.getElementById('editUserForm').action = `/admin/users/${userId}`;
+    });
   });
 </script>
 @endpush

@@ -155,9 +155,28 @@
 
         <!-- MAIN FEED (RIGHT) -->
         <div class="col-lg-9">
-          <h4 class="mb-3 fw-bold">Recent Reports</h4>
+          <!-- Tabs -->
+          <ul class="nav nav-tabs mb-3" id="feedTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+              <button class="nav-link active" id="reports-tab" data-bs-toggle="tab" data-bs-target="#reports" type="button" role="tab" aria-controls="reports" aria-selected="true">
+                <i class="bi bi-exclamation-triangle"></i> Reports
+              </button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link" id="announcements-tab" data-bs-toggle="tab" data-bs-target="#announcements" type="button" role="tab" aria-controls="announcements" aria-selected="false">
+                <i class="bi bi-megaphone"></i> Announcements
+              </button>
+            </li>
+          </ul>
 
-          @forelse($feedReports ?? [] as $report)
+          <!-- Tab Content -->
+          <div class="tab-content" id="feedTabContent">
+
+            <!-- Reports Tab -->
+            <div class="tab-pane fade show active" id="reports" role="tabpanel" aria-labelledby="reports-tab">
+              <h5 class="mb-3 fw-bold">Recent Reports</h5>
+
+              @forelse($feedReports ?? [] as $report)
           <!-- Report Card -->
           <div class="card post-card shadow-sm mb-3">
             <div class="row g-0">
@@ -224,12 +243,71 @@
           </div>
           @endforelse
 
-          <!-- Load More -->
-          @if(($feedReports ?? collect())->isNotEmpty())
-          <div class="d-flex justify-content-center my-4">
-            {{ $feedReports->links() }}
+              <!-- Load More -->
+              @if(($feedReports ?? collect())->isNotEmpty())
+              <div class="d-flex justify-content-center my-4">
+                {{ $feedReports->links() }}
+              </div>
+              @endif
+            </div>
+
+            <!-- Announcements Tab -->
+            <div class="tab-pane fade" id="announcements" role="tabpanel" aria-labelledby="announcements-tab">
+              <h5 class="mb-3 fw-bold">Public Announcements</h5>
+
+              @forelse($announcements ?? [] as $announcement)
+              <!-- Announcement Card -->
+              <div class="card shadow-sm mb-3">
+                <div class="card-body">
+                  <div class="d-flex justify-content-between align-items-start mb-2">
+                    <h5 class="card-title mb-0">{{ $announcement->title }}</h5>
+                    <span class="badge bg-{{ $announcement->type === 'urgent' ? 'danger' : ($announcement->type === 'warning' ? 'warning' : ($announcement->type === 'success' ? 'success' : 'info')) }}">
+                      {{ ucfirst($announcement->type) }}
+                    </span>
+                  </div>
+                  <p class="text-muted small mb-2">
+                    <i class="bi bi-calendar"></i> {{ $announcement->created_at->format('M d, Y') }}
+                    @if($announcement->lgu)
+                      • <i class="bi bi-building"></i> {{ $announcement->lgu->name }}
+                    @else
+                      • <i class="bi bi-globe"></i> System-wide
+                    @endif
+                    @if($announcement->is_pinned)
+                      • <i class="bi bi-pin-angle-fill text-primary"></i> Pinned
+                    @endif
+                  </p>
+                  <p class="card-text">{{ $announcement->content }}</p>
+                  <div class="d-flex justify-content-between align-items-center mt-3">
+                    <div>
+                      @if($announcement->expires_at)
+                        <small class="text-muted">
+                          <i class="bi bi-clock"></i> Expires: {{ $announcement->expires_at->format('M d, Y') }}
+                        </small>
+                      @endif
+                    </div>
+                    <div>
+                      <button class="btn btn-sm btn-outline-primary border-0" onclick="likeAnnouncement({{ $announcement->id }}, this)" title="Like this announcement">
+                        <i class="bi bi-heart"></i> <span class="like-count">{{ $announcement->reactions_count ?? 0 }}</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              @empty
+              <div class="text-center py-5">
+                <i class="bi bi-megaphone" style="font-size: 48px; color: #dee2e6;"></i>
+                <p class="text-muted mt-3">No announcements available at the moment.</p>
+              </div>
+              @endforelse
+
+              <!-- Load More -->
+              @if(($announcements ?? collect())->isNotEmpty())
+              <div class="d-flex justify-content-center my-4">
+                {{ $announcements->links() }}
+              </div>
+              @endif
+            </div>
           </div>
-          @endif
         </div>
       </div>
     </div>
@@ -462,6 +540,26 @@
       button.disabled = false;
       alert('Network error. Please try again.');
     });
+  }
+
+  // Like announcement function
+  function likeAnnouncement(announcementId, button) {
+    const icon = button.querySelector('i');
+    const countSpan = button.querySelector('.like-count');
+    const currentCount = parseInt(countSpan.textContent);
+
+    // Toggle heart icon
+    if (icon.classList.contains('bi-heart')) {
+      icon.classList.remove('bi-heart');
+      icon.classList.add('bi-heart-fill');
+      button.classList.add('text-danger');
+      countSpan.textContent = currentCount + 1;
+    } else {
+      icon.classList.remove('bi-heart-fill');
+      icon.classList.add('bi-heart');
+      button.classList.remove('text-danger');
+      countSpan.textContent = Math.max(0, currentCount - 1);
+    }
   }
 </script>
 @endpush

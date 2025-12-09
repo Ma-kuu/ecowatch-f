@@ -27,116 +27,116 @@
   <!-- Page Header -->
   <div class="row mb-4">
     <div class="col">
-      <h2 class="fw-bold mb-1">Welcome back, {{ $user->name ?? 'User' }}!</h2>
-      <p class="text-muted">Here's an overview of your environmental reports</p>
+      <div class="d-flex justify-content-between align-items-center">
+        <div>
+          <h2 class="fw-bold mb-1">Welcome back, {{ $user->name ?? 'User' }}!</h2>
+          <p class="text-muted mb-0">Here's an overview of your environmental reports</p>
+        </div>
+        <a href="{{ route('report-authenticated') }}" class="btn btn-success">
+          <i class="bi bi-plus-circle me-1"></i>Report Violation
+        </a>
+      </div>
     </div>
   </div>
 
   <!-- Summary Cards -->
-  <div class="row g-4 mb-4">
-    <div class="col-md-6 col-lg-3">
-      <div class="card stat-card pending shadow-sm border-0 h-100">
-        <div class="card-body">
-          <div class="d-flex justify-content-between align-items-start">
-            <div>
-              <p class="text-muted text-uppercase small mb-1 fw-semibold">Pending</p>
-              <h3 class="fw-bold mb-0">{{ $pendingCount ?? 0 }}</h3>
-            </div>
-            <div class="bg-warning bg-opacity-10 rounded p-3">
-              <i class="bi bi-clock-history text-warning" style="font-size: 24px;"></i>
-            </div>
-          </div>
-          <p class="text-muted small mb-0 mt-2">Awaiting review</p>
-        </div>
-      </div>
-    </div>
+<div class="row g-4 mb-4">
+  <div class="col-md-6 col-lg-3">
+    <x-stat-card 
+      title="Pending" 
+      :value="$pendingCount ?? 0" 
+      icon="bi-clock-history" 
+      color="warning"
+      subtitle="Awaiting review"
+      :filter-url="route('user-dashboard', ['status' => ['pending']])"
+    />
+  </div>
 
-    <div class="col-md-6 col-lg-3">
-      <div class="card stat-card in-review shadow-sm border-0 h-100">
-        <div class="card-body">
-          <div class="d-flex justify-content-between align-items-start">
-            <div>
-              <p class="text-muted text-uppercase small mb-1 fw-semibold">In Review</p>
-              <h3 class="fw-bold mb-0">{{ $inReviewCount ?? 0 }}</h3>
-            </div>
-            <div class="bg-info bg-opacity-10 rounded p-3">
-              <i class="bi bi-search text-info" style="font-size: 24px;"></i>
-            </div>
-          </div>
-          <p class="text-muted small mb-0 mt-2">Being investigated</p>
-        </div>
-      </div>
-    </div>
+  <div class="col-md-6 col-lg-3">
+    <x-stat-card 
+      title="In Review" 
+      :value="$inReviewCount ?? 0" 
+      icon="bi-search" 
+      color="info"
+      subtitle="Being investigated"
+      :filter-url="route('user-dashboard', ['status' => ['in-review', 'in-progress']])"
+    />
+  </div>
 
-    <div class="col-md-6 col-lg-3">
-      <div class="card stat-card resolved shadow-sm border-0 h-100">
-        <div class="card-body">
-          <div class="d-flex justify-content-between align-items-start">
-            <div>
-              <p class="text-muted text-uppercase small mb-1 fw-semibold">Awaiting Confirmation</p>
-              <h3 class="fw-bold mb-0">{{ $awaitingConfirmationCount ?? 0 }}</h3>
-            </div>
-            <div class="bg-warning bg-opacity-25 rounded p-3">
-              <i class="bi bi-hourglass-split text-warning" style="font-size: 24px;"></i>
-            </div>
-          </div>
-          <p class="text-muted small mb-0 mt-2">Resolved, pending confirmation</p>
-        </div>
-      </div>
-    </div>
+  <div class="col-md-6 col-lg-3">
+    <x-stat-card 
+      title="Awaiting Confirmation" 
+      :value="$awaitingConfirmationCount ?? 0" 
+      icon="bi-hourglass-split" 
+      color="secondary"
+      subtitle="Pending your confirmation"
+      :filter-url="route('user-dashboard', ['status' => ['awaiting-confirmation']])"
+    />
+  </div>
 
-    <div class="col-md-6 col-lg-3">
-      <div class="card stat-card confirmed shadow-sm border-0 h-100">
-        <div class="card-body">
-          <div class="d-flex justify-content-between align-items-start">
-            <div>
-              <p class="text-muted text-uppercase small mb-1 fw-semibold">Confirmed Resolved</p>
-              <h3 class="fw-bold mb-0">{{ $confirmedResolvedCount ?? 0 }}</h3>
-            </div>
-            <div class="bg-success bg-opacity-10 rounded p-3">
-              <i class="bi bi-check-circle-fill text-success" style="font-size: 24px;"></i>
-            </div>
+  <div class="col-md-6 col-lg-3">
+    <x-stat-card 
+      title="Resolved" 
+      :value="$confirmedResolvedCount ?? 0" 
+      icon="bi-check-circle" 
+      color="success"
+      subtitle="Successfully resolved"
+      :filter-url="route('user-dashboard', ['status' => ['resolved']])"
+    />
+  </div>
+</div>
+
+  <!-- Announcements from User's LGU -->
+  @if($announcements->isNotEmpty())
+  <div class="card shadow-sm border-0 mb-4">
+    <div class="card-header bg-white border-bottom py-3">
+      <h5 class="fw-bold mb-0">
+        <i class="bi bi-megaphone me-2 text-primary"></i>Announcements from {{ auth()->user()->lgu->name ?? 'Your Municipality' }}
+      </h5>
+    </div>
+    <div class="card-body">
+      @foreach($announcements as $announcement)
+      <div class="alert alert-{{ $announcement->type === 'urgent' ? 'danger' : ($announcement->type === 'warning' ? 'warning' : ($announcement->type === 'success' ? 'success' : 'info')) }} border-start border-4 mb-3" role="alert">
+        <div class="d-flex justify-content-between align-items-start">
+          <div class="flex-grow-1">
+            <h6 class="alert-heading fw-bold mb-1">
+              @if($announcement->is_pinned)
+                <i class="bi bi-pin-angle-fill me-1"></i>
+              @endif
+              {{ $announcement->title }}
+            </h6>
+            <p class="mb-2">{{ $announcement->content }}</p>
+            <small class="text-muted">
+              <i class="bi bi-calendar"></i> {{ $announcement->created_at->format('M d, Y') }}
+              @if($announcement->expires_at)
+                • <i class="bi bi-clock"></i> Expires: {{ $announcement->expires_at->format('M d, Y') }}
+              @endif
+            </small>
           </div>
-          <p class="text-muted small mb-0 mt-2">Successfully confirmed</p>
         </div>
       </div>
+      @endforeach
     </div>
   </div>
+  @endif
+
+  <!-- Filters and Search -->
+  <x-dashboard-filters 
+    :action="route('user-dashboard')"
+    :show-violation-type="true"
+    :show-status="true"
+    :show-barangay="false"
+    :show-priority="false"
+    :show-date-range="true"
+    :show-flagged="false"
+    :show-reporter-type="false"
+    :show-lgu="false"
+  />
 
   <!-- Reports Table Section -->
   <div class="card shadow-sm border-0">
     <div class="card-header bg-white border-bottom py-3">
-      <div class="row g-3 align-items-center">
-        <div class="col-lg-4">
-          <h5 class="fw-bold mb-0">My Reports</h5>
-        </div>
-        <div class="col-lg-8">
-          <div class="row g-2">
-            <div class="col-md-6">
-              <div class="input-group">
-                <span class="input-group-text bg-light border-end-0">
-                  <i class="bi bi-search text-muted"></i>
-                </span>
-                <input type="text" class="form-control border-start-0" placeholder="Search reports..." id="searchInput">
-              </div>
-            </div>
-            <div class="col-md-4">
-              <select class="form-select" id="statusFilter">
-                <option value="">All Status</option>
-                <option value="pending">Pending</option>
-                <option value="in-review">In Review</option>
-                <option value="resolved-awaiting">Resolved (Awaiting Confirmation)</option>
-                <option value="confirmed-resolved">Confirmed Resolved</option>
-              </select>
-            </div>
-            <div class="col-md-2">
-              <a href="{{ route('report-authenticated') }}" class="btn btn-success w-100">
-                <i class="bi bi-plus-lg"></i>
-              </a>
-            </div>
-          </div>
-        </div>
-      </div>
+      <h5 class="fw-bold mb-0">My Reports</h5>
     </div>
     <div class="card-body p-0">
       <div class="table-responsive">
@@ -144,17 +144,16 @@
           <thead class="table-light">
             <tr>
               <th class="px-4 py-3">Report ID</th>
-              <th class="py-3">Type of Violation</th>
-              <th class="py-3">Date Submitted</th>
+              <th class="py-3">Type</th>
+              <th class="py-3">Date</th>
               <th class="py-3">Location</th>
               <th class="py-3">Status</th>
-              <th class="py-3">Remarks</th>
-              <th class="py-3 text-center">Action</th>
+              <th class="py-3 text-center">Actions</th>
             </tr>
           </thead>
           <tbody>
-            @forelse($userReports ?? [] as $report)
-            <tr data-status="{{ $report->status }}">
+            @forelse($reports ?? [] as $report)
+            <tr>
               <td class="px-4 py-3 fw-semibold">{{ $report->report_id }}</td>
               <td class="py-3">
                 <i class="bi bi-{{ $report->icon }} text-{{ $report->color }} me-2"></i>{{ $report->violation_type_display }}
@@ -164,33 +163,21 @@
               <td class="py-3">
                 <span class="badge bg-{{ $report->status_color }}">{{ $report->status_display }}</span>
               </td>
-              <td class="py-3">
-                <small class="text-muted">{{ $report->remarks ?? 'No remarks' }}</small>
-              </td>
-              <td class="py-3 text-center table-actions">
-                <button class="btn btn-sm btn-outline-success"
-                        data-bs-toggle="modal"
+              <td class="py-3 text-center">
+                <button class="btn btn-sm btn-outline-primary" 
+                        data-bs-toggle="modal" 
                         data-bs-target="#reportDetailsModal"
-                        data-report-id="{{ $report->id }}"
-                        data-report-code="{{ $report->report_id }}"
-                        data-description="{{ $report->description }}"
-                        data-location="{{ $report->location }}"
-                        data-lat="{{ $report->latitude }}"
-                        data-lng="{{ $report->longitude }}"
-                        data-status="{{ $report->status_display }}"
-                        data-status-raw="{{ $report->status }}"
-                        data-violation="{{ $report->violation_type_display }}"
-                        data-created="{{ $report->created_at->format('M d, Y') }}"
-                        data-photo="{{ $report->photos?->where('is_primary', true)->first()?->file_path ? asset('storage/' . $report->photos?->where('is_primary', true)->first()?->file_path) : ($report->photos?->first()?->file_path ? asset('storage/' . $report->photos?->first()?->file_path) : '') }}"
-                        data-remarks="{{ $report->remarks ?? 'No remarks' }}"
-                        data-resolution-proof="{{ $report->photos?->where('is_primary', false)->first()?->file_path ? asset('storage/' . $report->photos?->where('is_primary', false)->first()?->file_path) : '' }}">
-                  <i class="bi bi-eye me-1"></i>View
+                        data-report-id="{{ $report->id }}">
+                  <i class="bi bi-eye"></i> View
                 </button>
               </td>
             </tr>
             @empty
             <tr>
-              <td colspan="7" class="text-center py-4 text-muted">No reports available</td>
+              <td colspan="6" class="text-center py-4 text-muted">
+                <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+                No reports found
+              </td>
             </tr>
             @endforelse
           </tbody>
@@ -199,126 +186,18 @@
     </div>
     <div class="card-footer bg-white border-top">
       <div class="d-flex justify-content-between align-items-center">
-        <small class="text-muted">Showing {{ $userReports->count() ?? 0 }} of {{ $totalUserReports ?? 0 }} reports</small>
-        <nav>
-          <ul class="pagination pagination-sm mb-0">
-            <li class="page-item disabled">
-              <a class="page-link" href="#"><i class="bi bi-chevron-left"></i></a>
-            </li>
-            <li class="page-item active"><a class="page-link" href="#">1</a></li>
-            <li class="page-item"><a class="page-link" href="#">2</a></li>
-            <li class="page-item"><a class="page-link" href="#">3</a></li>
-            <li class="page-item"><a class="page-link" href="#">4</a></li>
-            <li class="page-item">
-              <a class="page-link" href="#"><i class="bi bi-chevron-right"></i></a>
-            </li>
-          </ul>
-        </nav>
+        <small class="text-muted">Showing {{ $reports->firstItem() ?? 0 }} to {{ $reports->lastItem() ?? 0 }} of {{ $reports->total() ?? 0 }} reports</small>
+        {{ $reports->links('pagination::bootstrap-5') }}
       </div>
     </div>
   </div>
 
   <!-- View Report Details Modal -->
-  <div class="modal fade" id="reportDetailsModal" tabindex="-1">
-    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
-      <div class="modal-content">
-        <div class="modal-header">
-          <div>
-            <h5 class="modal-title fw-bold" id="modalReportId">Report #</h5>
-            <small class="text-muted" id="modalSubmittedDate"></small>
-          </div>
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-        </div>
-        <div class="modal-body">
-          <!-- Confirmation Notice -->
-          <div class="alert alert-info mb-3">
-            <i class="bi bi-info-circle-fill me-2"></i>
-            <strong>Action Required:</strong> Please review the admin's remarks and resolution proof photo below. Confirm if the issue has been resolved or provide feedback if it hasn't.
-          </div>
-
-          <div class="row g-4">
-            <!-- Report Info -->
-            <div class="col-12">
-              <div class="d-flex justify-content-between align-items-start mb-3">
-                <div>
-                  <h6 class="text-muted text-uppercase small mb-1">Violation Type</h6>
-                  <p class="fw-semibold mb-0" id="modalViolationType"></p>
-                </div>
-                <span class="badge" id="modalStatus"></span>
-              </div>
-            </div>
-
-            <!-- Location -->
-            <div class="col-12">
-              <h6 class="text-muted text-uppercase small mb-2">
-                <i class="bi bi-geo-alt-fill me-1"></i>Location
-              </h6>
-              <p class="mb-2" id="modalLocation"></p>
-              <!-- Map with enlarge button -->
-              <div style="position: relative;">
-                <button class="map-enlarge-btn" id="enlargeMapBtn" title="Enlarge map">
-                  <i class="bi bi-arrows-fullscreen"></i>
-                </button>
-                <div id="map" class="mb-0"></div>
-              </div>
-              <small class="text-muted">Interactive map showing report location</small>
-            </div>
-
-            <!-- Photo Evidence -->
-            <div class="col-12">
-              <h6 class="text-muted text-uppercase small mb-2">
-                <i class="bi bi-camera-fill me-1"></i>Photo Evidence
-              </h6>
-              <img id="modalPhotoEvidence" src="" alt="Report Evidence" class="report-image-preview shadow-sm">
-            </div>
-
-            <!-- Description -->
-            <div class="col-12">
-              <h6 class="text-muted text-uppercase small mb-2">
-                <i class="bi bi-file-text-fill me-1"></i>Description
-              </h6>
-              <p class="text-muted" id="modalDescription"></p>
-            </div>
-
-            <!-- Remarks -->
-            <div class="col-12">
-              <div class="alert alert-light border mb-0">
-                <h6 class="text-muted text-uppercase small mb-2">
-                  <i class="bi bi-chat-square-text-fill me-1"></i>Admin Remarks
-                </h6>
-                <p class="mb-0" id="modalRemarks"></p>
-              </div>
-            </div>
-
-            <!-- Resolution Proof -->
-            <div class="col-12">
-              <h6 class="text-muted text-uppercase small mb-2">
-                <i class="bi bi-image-fill me-1"></i>Resolution Proof Photo
-              </h6>
-              <img id="modalResolutionProof" src="" alt="Resolution Proof" class="img-fluid rounded shadow-sm" style="max-height: 300px; width: 100%; object-fit: cover;">
-            </div>
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-
-          <!-- Show confirm/reject buttons only for awaiting-confirmation reports -->
-          <div id="confirmationButtons" style="display: none;">
-            <button type="button" class="btn btn-danger me-2" id="btnRejectResolution">
-              <i class="bi bi-x-circle me-1"></i>Not Resolved
-            </button>
-            <button type="button" class="btn btn-success" id="btnConfirmResolution">
-              <i class="bi bi-check-circle me-1"></i>Confirm Resolved
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
+<x-modals.view-report-user />
 
   <!-- Rejection Reason Modal -->
   <div class="modal fade" id="rejectionReasonModal" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
       <div class="modal-content">
         <div class="modal-header">
           <h5 class="modal-title fw-bold">Why is this not resolved?</h5>
@@ -572,5 +451,20 @@
 
   // Table filtering is now handled automatically by table-filter.js
   // No need for manual event listeners - it auto-initializes!
+
+  // Auto-open modal if URL has hash anchor (from notifications)
+  window.addEventListener('load', function() {
+    const hash = window.location.hash;
+    if (hash && hash.startsWith('#report-')) {
+      const reportId = hash.replace('#report-', '');
+      // Find the view button for this report and click it
+      const viewButton = document.querySelector(`[data-bs-target="#reportDetailsModal"][data-report-id="${reportId}"]`);
+      if (viewButton) {
+        viewButton.click();
+        // Remove hash from URL after opening modal
+        history.replaceState(null, null, ' ');
+      }
+    }
+  });
 </script>
 @endpush

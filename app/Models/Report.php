@@ -41,7 +41,6 @@ class Report extends Model
         'manual_priority',
         'priority',
         'upvotes_count',
-        'downvotes_count',
         'views_count',
     ];
 
@@ -57,7 +56,6 @@ class Report extends Model
         'is_public' => 'boolean',
         'is_hidden' => 'boolean',
         'upvotes_count' => 'integer',
-        'downvotes_count' => 'integer',
         'views_count' => 'integer',
     ];
 

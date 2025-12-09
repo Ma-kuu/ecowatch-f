@@ -74,12 +74,45 @@ class PublicAnnouncementSeeder extends Seeder
                 'published_at' => now()->subDays(2),
                 'expires_at' => now()->addMonths(2),
             ],
+            [
+                'title' => 'Tree Planting Activity Success!',
+                'content' => 'Thank you to all 150 volunteers who participated in our tree planting activity last Sunday. We successfully planted 500 native trees in the reforestation area. Together, we are making a difference!',
+                'type' => 'success',
+                'lgu_id' => $davaoCityLgu->id,
+                'created_by' => $lguStaff->id,
+                'is_active' => true,
+                'is_pinned' => false,
+                'published_at' => now()->subDays(5),
+                'expires_at' => null,
+            ],
+            [
+                'title' => 'New Waste Collection Schedule',
+                'content' => 'Starting next week, waste collection will be on Mondays and Thursdays for biodegradable waste, and Wednesdays for recyclables. Please prepare your segregated waste accordingly.',
+                'type' => 'info',
+                'lgu_id' => $davaoCityLgu->id,
+                'created_by' => $lguStaff->id,
+                'is_active' => true,
+                'is_pinned' => false,
+                'published_at' => now()->subDays(1),
+                'expires_at' => now()->addDays(14),
+            ],
+            [
+                'title' => 'Environmental Awareness Seminar',
+                'content' => 'Free environmental awareness seminar for all residents on December 15, 2025 at the City Hall Auditorium. Topics include waste management, water conservation, and climate action. Registration is open!',
+                'type' => 'info',
+                'lgu_id' => $davaoCityLgu->id,
+                'created_by' => $lguStaff->id,
+                'is_active' => true,
+                'is_pinned' => false,
+                'published_at' => now(),
+                'expires_at' => now()->addDays(30),
+            ],
         ];
 
         foreach ($announcements as $announcement) {
             PublicAnnouncement::create($announcement);
         }
 
-        $this->command->info('Created 5 sample announcements');
+        $this->command->info('Created 8 sample announcements');
     }
 }
