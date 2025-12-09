@@ -161,7 +161,7 @@
               <hr class="my-2">
               <h6 class="mb-2" style="font-size: 14px;">Top Categories</h6>
               <div class="mb-2">
-                <canvas id="topCategoriesChart" style="max-height: 220px;"></canvas>
+                <canvas id="topCategoriesChart" style="max-height: 220px; cursor: pointer;" title="Click to filter by category"></canvas>
               </div>
               @if(($topCategories ?? collect())->isEmpty())
                 <p class="small text-muted mb-0" style="font-size: 12px;">No data available</p>
@@ -170,7 +170,7 @@
               <hr class="my-2">
               <h6 class="mb-2" style="font-size: 14px;">Reports by Status</h6>
               <div class="mb-2">
-                <canvas id="statusChart" style="max-height: 200px;"></canvas>
+                <canvas id="statusChart" style="max-height: 200px; cursor: pointer;" title="Click to filter by status"></canvas>
               </div>
             </div>
           </div>
@@ -319,9 +319,13 @@
           @endforeach
 
               <!-- Load More -->
-              @if(($feedReports ?? collect())->isNotEmpty())
-              <div class="d-flex justify-content-end my-3">
-                {{ $feedReports->links('vendor.pagination.feed-pagination') }}
+              @if(($feedReports ?? collect())->isNotEmpty() && $feedReports->hasPages())
+              <div class="d-flex justify-content-end my-3" id="feed-pagination-app">
+                <pagination-component 
+                  :current-page="{{ $feedReports->currentPage() }}"
+                  :total-pages="{{ $feedReports->lastPage() }}"
+                  base-url="{{ $feedReports->url(1) }}"
+                ></pagination-component>
               </div>
               @endif
             </div>
@@ -451,7 +455,7 @@
 
     if (!categories.length || !counts.length) return;
 
-    new Chart(ctx, {
+    const chart = new Chart(ctx, {
       type: 'pie',
       data: {
         labels: categories,
@@ -471,6 +475,21 @@
             },
           },
         },
+        onClick: (event, activeElements) => {
+          if (activeElements.length > 0) {
+            const index = activeElements[0].index;
+            const categoryName = categories[index];
+            
+            // Get the violation type ID from the data
+            const violationTypes = @json(($topCategories ?? collect())->pluck('id', 'name'));
+            const typeId = violationTypes[categoryName];
+            
+            if (typeId) {
+              // Redirect to feed with category filter
+              window.location.href = `{{ route('feed') }}?type[]=${typeId}`;
+            }
+          }
+        },
       },
     });
   })();
@@ -483,7 +502,7 @@
     const statusData = @json($statusBreakdown ?? []);
     if (!statusData || !statusData.labels || !statusData.labels.length) return;
 
-    new Chart(ctx, {
+    const statusChart = new Chart(ctx, {
       type: 'doughnut',
       data: {
         labels: statusData.labels,
@@ -502,6 +521,26 @@
               font: { size: 10 },
             },
           },
+        },
+        onClick: (event, activeElements) => {
+          if (activeElements.length > 0) {
+            const index = activeElements[0].index;
+            const statusLabel = statusData.labels[index];
+            
+            // Map display labels to actual status values
+            const statusMap = {
+              'Verified': 'in-review',
+              'Ongoing': 'in-progress',
+              'Resolved': 'resolved',
+              'Pending': 'pending'
+            };
+            
+            const statusValue = statusMap[statusLabel];
+            if (statusValue) {
+              // Redirect to feed with status filter
+              window.location.href = `{{ route('feed') }}?status[]=${statusValue}`;
+            }
+          }
         },
       },
     });

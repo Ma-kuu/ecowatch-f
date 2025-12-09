@@ -129,6 +129,16 @@ Route::middleware('auth')->group(function () {
     // Admin Report Delete Route
     Route::delete('/admin/reports/{id}', [AdminController::class, 'deleteReport'])
         ->name('admin.reports.delete');
+
+    // Admin Announcement Routes
+    Route::get('/admin/announcements', [AdminController::class, 'indexAnnouncements'])
+        ->name('admin.announcements.index');
+    Route::post('/admin/announcements', [AdminController::class, 'storeAnnouncement'])
+        ->name('admin.announcements.store');
+    Route::put('/admin/announcements/{id}', [AdminController::class, 'updateAnnouncement'])
+        ->name('admin.announcements.update');
+    Route::delete('/admin/announcements/{id}', [AdminController::class, 'destroyAnnouncement'])
+        ->name('admin.announcements.destroy');
 });
 
 // ============================================================================

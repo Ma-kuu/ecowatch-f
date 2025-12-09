@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use App\Models\Notification;
+use App\Models\PublicAnnouncement;
+use App\Models\Lgu;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
@@ -320,5 +322,114 @@ class AdminController extends Controller
 
         return redirect()->route('admin-dashboard')
             ->with('success', "Report {$reportId} has been permanently deleted.");
+    }
+
+    /**
+     * View all announcements (admin can see all LGU announcements).
+     */
+    public function indexAnnouncements(Request $request)
+    {
+        // Get base query for all announcements
+        $query = PublicAnnouncement::with(['lgu', 'creator']);
+
+        // Apply search filter
+        if ($search = $request->input('search')) {
+            $query->where(function($q) use ($search) {
+                $q->where('title', 'like', "%{$search}%")
+                  ->orWhere('content', 'like', "%{$search}%");
+            });
+        }
+
+        // Apply LGU filter
+        if ($lguId = $request->input('lgu_id')) {
+            $query->where('lgu_id', $lguId);
+        }
+
+        // Apply type filter
+        if ($type = $request->input('type')) {
+            $query->where('type', $type);
+        }
+
+        // Get announcements with pagination
+        $announcements = $query->latest()->paginate(12)->withQueryString();
+
+        // Get all LGUs for filter dropdown
+        $lgus = Lgu::orderBy('name')->get();
+
+        return view('auth.admin-announcements', compact('announcements', 'lgus'));
+    }
+
+    /**
+     * Store a new announcement (admin can create for any LGU).
+     */
+    public function storeAnnouncement(Request $request)
+    {
+        $validated = $request->validate([
+            'lgu_id' => ['required', 'exists:lgus,id'],
+            'title' => ['required', 'string', 'max:200'],
+            'content' => ['required', 'string'],
+            'type' => ['required', Rule::in(['info', 'warning', 'urgent', 'success'])],
+            'expires_at' => ['nullable', 'date', 'after:today'],
+            'is_pinned' => ['nullable', 'boolean'],
+            'is_active' => ['nullable', 'boolean'],
+        ]);
+
+        PublicAnnouncement::create([
+            'lgu_id' => $validated['lgu_id'],
+            'created_by' => auth()->id(),
+            'title' => $validated['title'],
+            'content' => $validated['content'],
+            'type' => $validated['type'],
+            'is_active' => $request->boolean('is_active', true),
+            'is_pinned' => $request->boolean('is_pinned', false),
+            'published_at' => now(),
+            'expires_at' => $validated['expires_at'] ?? null,
+        ]);
+
+        return redirect()->route('admin.announcements.index')
+            ->with('success', 'Announcement created successfully.');
+    }
+
+    /**
+     * Update an existing announcement (admin can edit any LGU announcement).
+     */
+    public function updateAnnouncement(Request $request, $id)
+    {
+        $announcement = PublicAnnouncement::findOrFail($id);
+
+        $validated = $request->validate([
+            'lgu_id' => ['required', 'exists:lgus,id'],
+            'title' => ['required', 'string', 'max:200'],
+            'content' => ['required', 'string'],
+            'type' => ['required', Rule::in(['info', 'warning', 'urgent', 'success'])],
+            'expires_at' => ['nullable', 'date', 'after:today'],
+            'is_pinned' => ['nullable', 'boolean'],
+            'is_active' => ['nullable', 'boolean'],
+        ]);
+
+        $announcement->update([
+            'lgu_id' => $validated['lgu_id'],
+            'title' => $validated['title'],
+            'content' => $validated['content'],
+            'type' => $validated['type'],
+            'is_active' => $request->boolean('is_active'),
+            'is_pinned' => $request->boolean('is_pinned'),
+            'expires_at' => $validated['expires_at'] ?? null,
+        ]);
+
+        return redirect()->route('admin.announcements.index')
+            ->with('success', 'Announcement updated successfully.');
+    }
+
+    /**
+     * Delete an announcement (admin can delete any LGU announcement).
+     */
+    public function destroyAnnouncement($id)
+    {
+        $announcement = PublicAnnouncement::findOrFail($id);
+        $announcement->delete();
+
+        return redirect()->route('admin.announcements.index')
+            ->with('success', 'Announcement deleted successfully.');
     }
 }

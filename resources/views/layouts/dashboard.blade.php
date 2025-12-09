@@ -138,20 +138,26 @@
           </li>
           @endif
           
+          @if(auth()->user()->role === 'admin')
+          <li class="nav-item">
+            <a class="nav-link text-dark {{ request()->routeIs('admin.announcements.index') ? 'active' : '' }}" 
+               href="{{ route('admin.announcements.index') }}"
+               title="Manage Announcements">
+              <i class="bi bi-megaphone-fill" style="font-size: 20px;"></i>
+            </a>
+          </li>
+          @endif
+          
           <li class="nav-item">
             <a class="nav-link text-dark position-relative {{ request()->routeIs('notifications.index') ? 'active' : '' }}" 
                href="{{ route('notifications.index') }}" 
-               title="Notifications">
+               title="Notifications"
+               id="notification-bell">
               <i class="bi bi-bell" style="font-size: 20px;"></i>
               @php
                 $unreadCount = \App\Models\Notification::where('user_id', auth()->id())->whereNull('read_at')->count();
               @endphp
-              @if($unreadCount > 0)
-                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" 
-                      style="font-size: 10px; padding: 3px 6px;">
-                  {{ $unreadCount > 9 ? '9+' : $unreadCount }}
-                </span>
-              @endif
+              <notification-badge :count="{{ $unreadCount }}"></notification-badge>
             </a>
           </li>
           <li class="nav-item">
@@ -190,7 +196,7 @@
   </div>
 
   <!-- Footer -->
-  <footer class="py-3 mt-auto" style="background-color: #2c3e50;">
+  <footer class="py-3 mt-5" style="background-color: #2c3e50;">
     <div class="container">
       <div class="row align-items-center">
         <div class="col-md-4 text-center text-md-start mb-2 mb-md-0">
@@ -210,8 +216,8 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
   <!-- Shared map lightbox overlay for dashboard pages -->
-  <div class="map-lightbox-overlay" id="mapLightboxOverlay"></div>
-  <div class="map-lightbox-container" id="mapLightboxContainer">
+  <div class="map-lightbox-overlay" id="mapLightboxOverlay" style="display: none;"></div>
+  <div class="map-lightbox-container" id="mapLightboxContainer" style="display: none; visibility: hidden;">
     <button class="map-lightbox-close" id="closeLightbox" title="Close">
       <i class="bi bi-x"></i>
     </button>
@@ -223,6 +229,8 @@
   <!-- Vue App for Toast Notifications -->
   <div id="vue-app">
     <toast-notification></toast-notification>
+    <!-- Notification badge data holder -->
+    <div style="display: none;" data-unread-count="{{ \App\Models\Notification::where('user_id', auth()->id())->whereNull('read_at')->count() }}"></div>
   </div>
   
   @vite(['resources/js/app.js'])

@@ -43,7 +43,7 @@
 
 /* Map lightbox container */
 .map-lightbox-container {
-  display: none;
+  display: none !important;
   position: fixed;
   top: 50%;
   left: 50%;
@@ -57,12 +57,14 @@
   padding: 15px;
   opacity: 0;
   transition: all 0.3s ease;
+  visibility: hidden;
 }
 
 .map-lightbox-container.active {
-  display: block;
+  display: block !important;
   opacity: 1;
   transform: translate(-50%, -50%) scale(1);
+  visibility: visible;
 }
 
 /* Close button */

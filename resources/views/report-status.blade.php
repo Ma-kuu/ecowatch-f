@@ -80,6 +80,11 @@
           <div class="mt-4 pt-4 border-top">
             <h5 class="mb-3" style="font-weight: 600; color: #212529;">Report Details</h5>
             
+            <!-- Vue Progress Bar -->
+            <div id="progress-bar-app" class="mb-4">
+              <progress-bar status="{{ $report->status }}"></progress-bar>
+            </div>
+            
             <div class="mb-3">
               <div class="d-flex justify-content-between align-items-center mb-2">
                 <span class="text-muted" style="font-size: 14px;">Tracking Code:</span>

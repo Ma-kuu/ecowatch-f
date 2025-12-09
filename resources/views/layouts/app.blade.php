@@ -79,7 +79,7 @@
   @yield('content')
 
   <!-- Footer -->
-  <footer class="py-3 mt-auto" style="background-color: #2c3e50;">
+  <footer class="py-3 mt-5" style="background-color: #2c3e50;">
     <div class="container">
       <div class="row align-items-center">
         <div class="col-md-4 text-center text-md-start mb-2 mb-md-0">
@@ -99,8 +99,8 @@
   <div id="vue-notifications"></div>
 
   <!-- Shared map lightbox overlay for public pages -->
-  <div class="map-lightbox-overlay" id="mapLightboxOverlay"></div>
-  <div class="map-lightbox-container" id="mapLightboxContainer">
+  <div class="map-lightbox-overlay" id="mapLightboxOverlay" style="display: none;"></div>
+  <div class="map-lightbox-container" id="mapLightboxContainer" style="display: none; visibility: hidden;">
     <button class="map-lightbox-close" id="closeLightbox" title="Close">
       <i class="bi bi-x"></i>
     </button>
