@@ -14,7 +14,7 @@
 
 <!-- Filter Toggle Button -->
 <div class="d-flex align-items-center gap-2 mb-3">
-  <button type="button" class="btn btn-primary" data-bs-toggle="collapse" data-bs-target="#advancedFilters" aria-expanded="false">
+  <button type="button" class="btn btn-primary" id="filterToggleBtn" aria-expanded="{{ request()->hasAny(['violation_type', 'status', 'lgu', 'barangay', 'priority', 'date_range', 'flagged', 'reporter_type']) ? 'true' : 'false' }}" aria-controls="advancedFilters">
     <i class="bi bi-funnel-fill me-2"></i>Filters
     @if(request()->hasAny(['violation_type', 'status', 'lgu', 'barangay', 'priority', 'date_range', 'flagged', 'reporter_type']))
       <span class="badge bg-light text-primary ms-2">{{ collect(request()->only(['violation_type', 'status', 'lgu', 'barangay', 'priority', 'date_range', 'flagged', 'reporter_type']))->filter()->count() }}</span>
@@ -29,7 +29,7 @@
 
 <form method="GET" action="{{ $action }}" id="filterForm" class="mb-4">
   <!-- Collapsible Advanced Filters (Closed by Default) -->
-  <div class="collapse" id="advancedFilters">
+  <div class="collapse {{ request()->hasAny(['violation_type', 'status', 'lgu', 'barangay', 'priority', 'date_range', 'flagged', 'reporter_type']) ? 'show' : '' }}" id="advancedFilters">
     <div class="card mb-3">
       <div class="card-body">
         <div class="row g-3">
@@ -231,3 +231,26 @@
   </div>
   @endif
 </form>
+
+<script>
+  // Manual toggle for filter collapse
+  document.addEventListener('DOMContentLoaded', function() {
+    const filterBtn = document.getElementById('filterToggleBtn');
+    const advancedFilters = document.getElementById('advancedFilters');
+    
+    if (filterBtn && advancedFilters) {
+      filterBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        
+        // Toggle the 'show' class
+        if (advancedFilters.classList.contains('show')) {
+          advancedFilters.classList.remove('show');
+          filterBtn.setAttribute('aria-expanded', 'false');
+        } else {
+          advancedFilters.classList.add('show');
+          filterBtn.setAttribute('aria-expanded', 'true');
+        }
+      });
+    }
+  });
+</script>

@@ -31,16 +31,19 @@ class LoginController extends Controller
         // Attempt to log the user in
         if (Auth::attempt($credentials, $request->filled('remember'))) {
             $request->session()->regenerate();
+            
+            // Clear any old intended URL to prevent cross-role redirects
+            $request->session()->forget('url.intended');
 
             // Role-based redirect
             $user = Auth::user();
 
             if ($user->role === 'admin') {
-                return redirect()->intended(route('admin-dashboard'));
+                return redirect()->route('admin-dashboard');
             } elseif ($user->role === 'lgu') {
-                return redirect()->intended(route('lgu-dashboard'));
+                return redirect()->route('lgu-dashboard');
             } else {
-                return redirect()->intended(route('user-dashboard'));
+                return redirect()->route('user-dashboard');
             }
         }
 

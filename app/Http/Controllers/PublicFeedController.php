@@ -30,9 +30,7 @@ class PublicFeedController extends Controller
             ->with([
                 'violationType',
                 'barangay.lgu',
-                'photos' => function ($q) {
-                    $q->where('is_primary', true);
-                },
+                'photos', // Load all photos (both primary and proof photos)
                 'upvotes' => function ($q) {
                     if (auth()->check()) {
                         $q->where('user_id', auth()->id());
@@ -43,14 +41,22 @@ class PublicFeedController extends Controller
             ->where('is_hidden', false)
             ->whereIn('status', $allowedStatuses);
 
+        // Status filter - support multiple selections
         if ($filters['status']) {
-            $query->where('status', $filters['status']);
+            if (is_array($filters['status'])) {
+                $query->whereIn('status', $filters['status']);
+            } else {
+                $query->where('status', $filters['status']);
+            }
         }
 
+        // Type filter - support multiple selections
         if ($filters['type']) {
-            $query->whereHas('violationType', function ($q) use ($filters) {
-                $q->where('id', $filters['type']);
-            });
+            if (is_array($filters['type'])) {
+                $query->whereIn('violation_type_id', $filters['type']);
+            } else {
+                $query->where('violation_type_id', $filters['type']);
+            }
         }
 
         // Time range filter
@@ -106,7 +112,7 @@ class PublicFeedController extends Controller
             ->orderByDesc('created_at');
         }
 
-        $feedReports = $query->paginate(9)->withQueryString();
+        $feedReports = $query->paginate(3)->withQueryString();
 
         $violationTypes = ViolationType::active()
             ->orderBy('name')

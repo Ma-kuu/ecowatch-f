@@ -1,7 +1,7 @@
 @props(['modalId' => 'updateStatusModal'])
 
 <div class="modal fade" id="{{ $modalId }}" tabindex="-1">
-  <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
     <div class="modal-content">
       <div class="modal-header bg-light">
         <div>
@@ -15,7 +15,7 @@
       <form id="editReportForm" method="POST">
         @csrf
         @method('PUT')
-        <div class="modal-body">
+        <div class="modal-body" style="max-height: 60vh; overflow-y: auto;">
           <!-- Report Status -->
           <div class="mb-4">
             <label for="reportStatus" class="form-label fw-semibold">
@@ -85,16 +85,16 @@
             <small class="text-muted">Controls where this report appears in the feed regardless of upvotes</small>
           </div>
         </div>
-        <div class="modal-footer d-flex justify-content-between">
+        <div class="modal-footer bg-light border-top d-flex justify-content-between align-items-center">
           <div>
             <!-- Delete button on the left -->
             <button type="button" class="btn btn-danger" id="deleteReportBtn">
               <i class="bi bi-trash me-1"></i>Delete Report
             </button>
           </div>
-          <div>
+          <div class="d-flex gap-2">
             <!-- Action buttons on the right -->
-            <button type="button" class="btn btn-secondary me-2" data-bs-dismiss="modal">Cancel</button>
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
             <button type="submit" class="btn btn-success">
               <i class="bi bi-check-circle me-1"></i>Save Changes
             </button>

@@ -2,6 +2,16 @@
 
 @section('title', 'About EcoWatch - Environmental Violation Reporting Platform')
 
+@push('styles')
+<style>
+  .map-lightbox-overlay,
+  .map-lightbox-container,
+  .map-lightbox-close {
+    display: none !important;
+  }
+</style>
+@endpush
+
 @section('content')
   <!-- Hero Section -->
   <section class="py-5 d-flex align-items-center text-center bg-light" style="min-height: 60vh; margin-top: 56px;">
@@ -46,7 +56,7 @@
                     <i class="bi bi-shield-check text-success" style="font-size: 48px;"></i>
                   </div>
                   <h4 class="fw-bold mb-1">Secure</h4>
-                  <p class="text-muted small mb-0">End-to-end encryption</p>
+                  <p class="text-muted small mb-0">Protected & confidential</p>
                 </div>
               </div>
               <div class="col-6">
@@ -64,7 +74,7 @@
                     <i class="bi bi-clock-history text-success" style="font-size: 48px;"></i>
                   </div>
                   <h4 class="fw-bold mb-1">Real-time</h4>
-                  <p class="text-muted small mb-0">Instant notifications</p>
+                  <p class="text-muted small mb-0">Status updates</p>
                 </div>
               </div>
               <div class="col-6">

@@ -222,6 +222,34 @@ class DashboardController extends Controller
         $inReviewReports = Report::whereIn('status', ['in-review', 'in-progress'])->count();
         $resolvedReports = Report::byStatus('resolved')->count();
 
+        // Get category statistics for admin
+        $categoryStats = ViolationType::withCount('reports')
+            ->having('reports_count', '>', 0)
+            ->get()
+            ->map(function($type) use ($totalReports) {
+                return (object)[
+                    'id' => $type->id,
+                    'name' => $type->name,
+                    'count' => $type->reports_count,
+                    'percentage' => $totalReports > 0 ? round(($type->reports_count / $totalReports) * 100, 1) : 0,
+                    'color' => $type->color,
+                ];
+            });
+
+        // Apply sorting
+        $sortField = $request->input('sort', 'created_at');
+        $sortDirection = $request->input('direction', 'desc');
+        $allowedSortFields = ['report_id', 'created_at', 'status'];
+
+        if (in_array($sortField, $allowedSortFields) && in_array($sortDirection, ['asc', 'desc'])) {
+            $query->orderBy($sortField, $sortDirection);
+        } else {
+            $query->latest();
+        }
+
+        // Get paginated reports
+        $reports = $query->paginate(10);
+
         // Get announcements from admin user's LGU (if they have one)
         $user = Auth::user();
         $announcements = collect();
@@ -237,14 +265,13 @@ class DashboardController extends Controller
                 ->get();
         }
 
-        return view('auth.user-dashboard', compact(
-            'user',
+        return view('auth.admin-dashboard', compact(
             'reports',
-            'totalUserReports',
-            'pendingCount',
-            'inReviewCount',
-            'awaitingConfirmationCount',
-            'confirmedResolvedCount',
+            'totalReports',
+            'pendingReports',
+            'inReviewReports',
+            'resolvedReports',
+            'categoryStats',
             'announcements'
         ));
     }
@@ -328,15 +355,22 @@ class DashboardController extends Controller
         $totalAssigned = Report::forLgu($lgu->id)->count();
         $pendingAssigned = Report::forLgu($lgu->id)->byStatus('pending')->count();
         $inProgressAssigned = Report::forLgu($lgu->id)->byStatus('in-progress')->count();
+        // Fixed includes both awaiting-confirmation and resolved
         $fixedAssigned = Report::forLgu($lgu->id)
-            ->byStatus('awaiting-confirmation')
-            ->where('lgu_confirmed', true)
+            ->where(function($q) {
+                $q->where(function($q2) {
+                    $q2->where('status', 'awaiting-confirmation')
+                       ->where('lgu_confirmed', true);
+                })->orWhere('status', 'resolved');
+            })
             ->count();
         $verifiedAssigned = Report::forLgu($lgu->id)->byStatus('resolved')->count();
 
-        // Get category statistics for LGU
+        // Get category statistics for LGU (using forLgu scope)
         $lguCategoryStats = ViolationType::withCount(['reports' => function($query) use ($lgu) {
-                $query->where('assigned_lgu_id', $lgu->id);
+                $query->whereHas('barangay', function($q) use ($lgu) {
+                    $q->where('lgu_id', $lgu->id);
+                });
             }])
             ->having('reports_count', '>', 0)
             ->get()
@@ -370,6 +404,19 @@ class DashboardController extends Controller
             ->orderByDesc('created_at')
             ->get();
 
+        // Get monthly trend data (last 6 months)
+        $monthlyTrend = [];
+        $monthLabels = [];
+        for ($i = 5; $i >= 0; $i--) {
+            $date = now()->subMonths($i);
+            $monthLabels[] = $date->format('M');
+            $count = Report::forLgu($lgu->id)
+                ->whereYear('created_at', $date->year)
+                ->whereMonth('created_at', $date->month)
+                ->count();
+            $monthlyTrend[] = $count;
+        }
+
         return view('auth.lgu-dashboard', compact(
             'lgu',
             'lguReports',
@@ -379,7 +426,9 @@ class DashboardController extends Controller
             'fixedAssigned',
             'verifiedAssigned',
             'lguCategoryStats',
-            'announcements'
+            'announcements',
+            'monthlyTrend',
+            'monthLabels'
         ));
     }
 
@@ -465,8 +514,13 @@ class DashboardController extends Controller
             ]);
         }
 
+        // Different success message for anonymous vs authenticated reports
+        $successMessage = $report->is_anonymous
+            ? "Report {$report->report_id} has been marked as fixed and submitted for admin verification."
+            : "Report {$report->report_id} has been marked as fixed and submitted for user verification.";
+
         return redirect()->route('lgu-dashboard')
-            ->with('success', "Report {$report->report_id} has been marked as fixed and submitted for user verification.");
+            ->with('success', $successMessage);
     }
 
     /**

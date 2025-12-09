@@ -4,27 +4,45 @@
 
 @push('styles')
 <style>
+  html, body {
+    height: 100%;
+    margin: 0;
+    overflow-x: hidden;
+  }
   body {
-    min-height: 100vh;
     display: flex;
     flex-direction: column;
     background: #f4f6f8;
+    position: relative;
+  }
+  body::after {
+    content: none !important;
   }
   main.container {
-    flex: 1 0 auto;
+    flex: 1;
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
     padding-top: 90px;
     padding-bottom: 24px;
-    min-height: 0;
   }
   footer {
     flex-shrink: 0;
+    margin-top: 0 !important;
   }
   .form-control::placeholder {
     font-size: 14px;
+  }
+  /* Hide any stray close buttons when alerts are not visible */
+  .alert:not(.show) .btn-close {
+    display: none;
+  }
+  /* Hide map lightbox elements on login page */
+  .map-lightbox-overlay,
+  .map-lightbox-container,
+  .map-lightbox-close {
+    display: none !important;
   }
   @media (max-width: 575.98px) {
     main.container { padding-top: 80px; }
@@ -80,9 +98,12 @@
           <a href="{{ route('register') }}" class="text-success text-decoration-none fw-medium ms-1">Sign up</a>
         </div>
 
-        <div class="text-center mt-3">
-          <a href="{{ route('report-status') }}" class="text-muted text-decoration-none" style="font-size: 14px;">
-            <i class="bi bi-search me-1"></i>Check report status
+        <hr class="my-4">
+
+        <div class="text-center">
+          <p class="text-muted mb-2" style="font-size: 13px;">Submitted an anonymous report?</p>
+          <a href="{{ route('report-status') }}" class="btn btn-outline-success w-100">
+            <i class="bi bi-search me-2"></i>Check Your Report Status
           </a>
         </div>
       </div>

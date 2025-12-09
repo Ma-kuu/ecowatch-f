@@ -7,6 +7,11 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
 <link rel="stylesheet" href="https://unpkg.com/leaflet.fullscreen@2.4.0/Control.FullScreen.css" />
 <style>
+  .map-lightbox-overlay,
+  .map-lightbox-container,
+  .map-lightbox-close {
+    display: none !important;
+  }
   body {
     background: #f4f6f8;
     min-height: 100vh;
@@ -98,7 +103,8 @@
               <div class="mb-3">
                 <label class="form-label fw-medium" style="font-size: 14px;">Upload Photo <span class="text-muted">(Optional)</span></label>
                 <input type="file" name="photo" accept="image/*" class="form-control" id="photoInput">
-                <small class="text-muted">Max 10MB</small>
+                <small class="text-muted d-block">Max 10MB</small>
+                <small class="text-muted" id="fileName"></small>
               </div>
 
               <div class="mb-3">
@@ -128,6 +134,9 @@
       </div>
     </div>
   </main>
+
+  <!-- Success Modal Component -->
+  <x-modals.report-success :isAnonymous="true" />
 @endsection
 
 @push('scripts')
@@ -196,6 +205,10 @@
     if (marker) map.removeLayer(marker);
     marker = L.marker(e.latlng).addTo(map)
       .bindPopup(`📍 Location: ${e.latlng.lat.toFixed(4)}, ${e.latlng.lng.toFixed(4)}`).openPopup();
+    
+    // Store coordinates in hidden fields
+    document.getElementById('latitude').value = e.latlng.lat;
+    document.getElementById('longitude').value = e.latlng.lng;
   });
 
   // Add Search Bar
@@ -213,23 +226,15 @@
 
   // Show selected file name
   const photoInput = document.getElementById('photoInput');
-  photoInput.addEventListener('change', function(e) {
-    const fileName = e.target.files[0]?.name;
-    if (fileName) {
-      document.getElementById('fileName').innerHTML = '<strong>Selected:</strong> ' + fileName;
-    }
-  });
-
-  // Store marker coordinates
-  map.on('click', function(e) {
-    if (marker) map.removeLayer(marker);
-    marker = L.marker(e.latlng).addTo(map)
-      .bindPopup(`📍 Location: ${e.latlng.lat.toFixed(4)}, ${e.latlng.lng.toFixed(4)}`).openPopup();
-    
-    // Store coordinates in hidden fields
-    document.getElementById('latitude').value = e.latlng.lat;
-    document.getElementById('longitude').value = e.latlng.lng;
-  });
+  if (photoInput) {
+    photoInput.addEventListener('change', function(e) {
+      const fileName = e.target.files[0]?.name;
+      const fileNameElement = document.getElementById('fileName');
+      if (fileName && fileNameElement) {
+        fileNameElement.innerHTML = '<strong>Selected:</strong> ' + fileName;
+      }
+    });
+  }
 
   // Form Submission
   document.getElementById('reportForm').addEventListener('submit', function(e) {
@@ -279,23 +284,42 @@
     })
     .then(data => {
       if (data.success) {
-        // Show success notification
-        showToast('Report submitted successfully!', 'success', 5000);
-
         // Reset form
         reportForm.reset();
         if (marker) map.removeLayer(marker);
         marker = null;
-        document.getElementById('fileName').innerHTML = '';
+        const fileNameElement = document.getElementById('fileName');
+        if (fileNameElement) fileNameElement.innerHTML = '';
         
         // Reset button
         submitBtn.innerHTML = originalText;
         submitBtn.disabled = false;
 
-        // Redirect after delay
-        setTimeout(() => {
-          window.location.href = data.redirect;
-        }, 2000);
+        // Populate success modal with Report ID and summary
+        document.getElementById('modalReportId').value = data.report_id;
+        
+        // Get form values for summary
+        const violationSelect = document.querySelector('select[name="violation_type"]');
+        const violationText = violationSelect.options[violationSelect.selectedIndex].text;
+        const description = document.querySelector('textarea[name="description"]').value;
+        const barangaySelect = document.getElementById('barangaySelect');
+        const barangayText = barangaySelect.options[barangaySelect.selectedIndex].text;
+        const lguSelect = document.getElementById('lguSelect');
+        const lguText = lguSelect.options[lguSelect.selectedIndex].text;
+        
+        // Populate summary fields
+        document.getElementById('modalSummaryViolation').textContent = violationText;
+        document.getElementById('modalSummaryLocation').textContent = barangayText + ', ' + lguText;
+        document.getElementById('modalSummaryDescription').textContent = description;
+        document.getElementById('modalSummaryDate').textContent = new Date().toLocaleDateString('en-US', { 
+          month: 'short', 
+          day: 'numeric', 
+          year: 'numeric' 
+        });
+        
+        // Show modal
+        const successModal = new bootstrap.Modal(document.getElementById('successModal'));
+        successModal.show();
       } else {
         throw new Error(data.message || 'Submission failed');
       }
@@ -308,5 +332,6 @@
       submitBtn.disabled = false;
     });
   });
+
 </script>
 @endpush

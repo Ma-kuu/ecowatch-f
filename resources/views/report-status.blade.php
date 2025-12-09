@@ -4,6 +4,11 @@
 
 @push('styles')
 <style>
+  .map-lightbox-overlay,
+  .map-lightbox-container,
+  .map-lightbox-close {
+    display: none !important;
+  }
   body {
     min-height: 100vh;
     display: flex;
@@ -52,19 +57,18 @@
           @csrf
 
           <div class="mb-4">
-            <label class="form-label fw-medium" style="font-size: 14px;">Tracking Code</label>
+            <label class="form-label fw-medium" style="font-size: 14px;">Report ID</label>
             <input 
               type="text" 
               name="tracking_code" 
               class="form-control form-control-lg text-uppercase" 
-              placeholder="e.g., ECO-2024-001234" 
+              placeholder="e.g., RPT-001" 
               value="{{ old('tracking_code') }}" 
               required
-              style="letter-spacing: 0.5px;"
+              style="letter-spacing: 2px; font-weight: 600;"
             >
             <small class="text-muted" style="font-size: 13px;">
-              You received this code when you submitted your report using 
-              Anonymous Report Form
+              Enter the <strong>Report ID</strong> you received after submitting your report (e.g., RPT-001, RPT-123)
             </small>
           </div>
 

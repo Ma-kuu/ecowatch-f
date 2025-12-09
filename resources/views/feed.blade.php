@@ -57,6 +57,15 @@
   .report-btn i {
     font-size: 14px;
   }
+  
+  /* Pagination styling - match admin dashboard */
+  .feed-pagination .pagination {
+    margin: 0;
+  }
+  .feed-pagination .page-item.active .page-link {
+    background-color: #198754;
+    border-color: #198754;
+  }
 </style>
 @endpush
 
@@ -69,9 +78,14 @@
         <div class="col-lg-3">
           <div class="card border-0 shadow-sm">
             <div class="card-body p-3">
-              <h6 class="fw-bold mb-1 text-center">Filter Reports</h6>
-              <p class="text-muted text-center mb-3" style="font-size: 13px;">Narrow down by category and status</p>
+              <button type="button" class="btn btn-success w-100 mb-3" id="feedFilterToggleBtn" aria-expanded="false" aria-controls="feedFilters">
+                <i class="bi bi-funnel-fill me-2"></i>Filter Reports
+                @if(request()->hasAny(['type', 'status', 'municipality', 'search']))
+                  <span class="badge bg-light text-success ms-2">{{ collect(request()->only(['type', 'status', 'municipality', 'search']))->filter()->count() }}</span>
+                @endif
+              </button>
 
+              <div class="collapse" id="feedFilters">
               <form method="GET" action="{{ route('feed') }}">
                 <div class="mb-2">
                   <label class="form-label fw-medium mb-1" style="font-size: 13px;">Sort By</label>
@@ -92,25 +106,33 @@
                 </div>
 
                 <div class="mb-2">
-                  <label class="form-label fw-medium mb-1" style="font-size: 13px;">Category</label>
-                  <select name="type" class="form-select form-select-sm">
-                    <option value="">All categories</option>
+                  <label class="form-label fw-medium mb-1" style="font-size: 13px;">Category (Multiple)</label>
+                  <div class="border rounded p-2" style="max-height: 150px; overflow-y: auto; font-size: 13px;">
                     @foreach($violationTypes as $type)
-                      <option value="{{ $type->id }}" {{ ($filters['type'] ?? null) == $type->id ? 'selected' : '' }}>
-                        {{ $type->name }}
-                      </option>
+                      <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="type[]" value="{{ $type->id }}" id="feedType{{ $type->id }}" {{ in_array($type->id, (array)request('type', [])) ? 'checked' : '' }}>
+                        <label class="form-check-label" for="feedType{{ $type->id }}">{{ $type->name }}</label>
+                      </div>
                     @endforeach
-                  </select>
+                  </div>
                 </div>
 
                 <div class="mb-2">
-                  <label class="form-label fw-medium mb-1" style="font-size: 13px;">Status</label>
-                  <select name="status" class="form-select form-select-sm">
-                    <option value="">All statuses</option>
-                    <option value="in-review" {{ ($filters['status'] ?? null) === 'in-review' ? 'selected' : '' }}>Verified</option>
-                    <option value="in-progress" {{ ($filters['status'] ?? null) === 'in-progress' ? 'selected' : '' }}>Ongoing</option>
-                    <option value="resolved" {{ ($filters['status'] ?? null) === 'resolved' ? 'selected' : '' }}>Resolved</option>
-                  </select>
+                  <label class="form-label fw-medium mb-1" style="font-size: 13px;">Status (Multiple)</label>
+                  <div class="border rounded p-2" style="font-size: 13px;">
+                    <div class="form-check">
+                      <input class="form-check-input" type="checkbox" name="status[]" value="in-review" id="feedStatusReview" {{ in_array('in-review', (array)request('status', [])) ? 'checked' : '' }}>
+                      <label class="form-check-label" for="feedStatusReview">Verified</label>
+                    </div>
+                    <div class="form-check">
+                      <input class="form-check-input" type="checkbox" name="status[]" value="in-progress" id="feedStatusProgress" {{ in_array('in-progress', (array)request('status', [])) ? 'checked' : '' }}>
+                      <label class="form-check-label" for="feedStatusProgress">Ongoing</label>
+                    </div>
+                    <div class="form-check">
+                      <input class="form-check-input" type="checkbox" name="status[]" value="resolved" id="feedStatusResolved" {{ in_array('resolved', (array)request('status', [])) ? 'checked' : '' }}>
+                      <label class="form-check-label" for="feedStatusResolved">Resolved</label>
+                    </div>
+                  </div>
                 </div>
 
                 <div class="mb-2">
@@ -135,6 +157,7 @@
                   <a href="{{ route('feed') }}" class="btn btn-outline-secondary btn-sm">Clear Filters</a>
                 </div>
               </form>
+              </div>
               <hr class="my-2">
               <h6 class="mb-2" style="font-size: 14px;">Top Categories</h6>
               <div class="mb-2">
@@ -211,6 +234,15 @@
                   <div class="mt-auto d-flex justify-content-between align-items-center">
                     <div>
                       <span class="badge bg-light text-dark category-badge">{{ $report->violation_type_display }}</span>
+                      @if($report->status === 'resolved' && $report->photos->where('is_primary', false)->isNotEmpty())
+                        <button 
+                          class="btn btn-sm btn-outline-success ms-2"
+                          data-bs-toggle="modal"
+                          data-bs-target="#proofModal{{ $report->id }}"
+                          title="View resolution proof">
+                          <i class="bi bi-images"></i> View Fix
+                        </button>
+                      @endif
                     </div>
                     <div>
                       <button 
@@ -243,10 +275,53 @@
           </div>
           @endforelse
 
+          <!-- Proof Photo Modals -->
+          @foreach($feedReports ?? [] as $report)
+            @if($report->status === 'resolved' && $report->photos->where('is_primary', false)->isNotEmpty())
+              <div class="modal fade" id="proofModal{{ $report->id }}" tabindex="-1">
+                <div class="modal-dialog modal-lg modal-dialog-centered">
+                  <div class="modal-content">
+                    <div class="modal-header bg-success text-white">
+                      <h5 class="modal-title">
+                        <i class="bi bi-check-circle-fill me-2"></i>Resolution Proof - {{ $report->report_id }}
+                      </h5>
+                      <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                      <div class="alert alert-success mb-3">
+                        <i class="bi bi-info-circle-fill me-2"></i>
+                        <strong>Report Resolved:</strong> This environmental issue has been addressed by {{ $report->barangay->lgu->name ?? 'LGU' }}.
+                      </div>
+                      <h6 class="fw-bold mb-3">Proof Photos:</h6>
+                      <div class="row g-3">
+                        @foreach($report->photos->where('is_primary', false) as $photo)
+                          <div class="col-md-6">
+                            <img 
+                              src="{{ asset('storage/' . $photo->file_path) }}" 
+                              alt="Proof Photo" 
+                              class="img-fluid rounded shadow-sm"
+                              style="width: 100%; height: 250px; object-fit: cover; cursor: pointer;"
+                              onclick="window.open('{{ asset('storage/' . $photo->file_path) }}', '_blank')">
+                            <small class="text-muted d-block mt-1">
+                              <i class="bi bi-calendar me-1"></i>{{ $photo->created_at->format('M d, Y') }}
+                            </small>
+                          </div>
+                        @endforeach
+                      </div>
+                    </div>
+                    <div class="modal-footer">
+                      <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            @endif
+          @endforeach
+
               <!-- Load More -->
               @if(($feedReports ?? collect())->isNotEmpty())
-              <div class="d-flex justify-content-center my-4">
-                {{ $feedReports->links() }}
+              <div class="d-flex justify-content-end my-3">
+                {{ $feedReports->links('vendor.pagination.feed-pagination') }}
               </div>
               @endif
             </div>
@@ -541,6 +616,27 @@
       alert('Network error. Please try again.');
     });
   }
+
+  // Feed filter toggle
+  document.addEventListener('DOMContentLoaded', function() {
+    const feedFilterBtn = document.getElementById('feedFilterToggleBtn');
+    const feedFilters = document.getElementById('feedFilters');
+    
+    if (feedFilterBtn && feedFilters) {
+      feedFilterBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        
+        // Toggle the 'show' class
+        if (feedFilters.classList.contains('show')) {
+          feedFilters.classList.remove('show');
+          feedFilterBtn.setAttribute('aria-expanded', 'false');
+        } else {
+          feedFilters.classList.add('show');
+          feedFilterBtn.setAttribute('aria-expanded', 'true');
+        }
+      });
+    }
+  });
 
   // Like announcement function
   function likeAnnouncement(announcementId, button) {

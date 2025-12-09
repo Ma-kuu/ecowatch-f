@@ -5,11 +5,6 @@
 @section('dashboard-home', route('admin-dashboard'))
 
 @section('nav-links')
-  <li class="nav-item">
-    <a class="nav-link text-dark" href="{{ route('admin-settings') }}">
-      <i class="bi bi-gear-fill"></i> Settings
-    </a>
-  </li>
 @endsection
 
 @section('footer-title', 'EcoWatch Admin Panel')

@@ -79,11 +79,19 @@
   @yield('content')
 
   <!-- Footer -->
-  <footer class="bg-dark text-white py-4">
-    <div class="container text-center">
-      <img src="{{ asset('images/logo text.png') }}" alt="EcoWatch" height="40" class="mb-3">
-      <p class="text-white-50 small mb-3">Protecting our environment through community reporting.</p>
-      <p class="text-white-50 small mb-0">&copy; {{ date('Y') }} EcoWatch. All rights reserved.</p>
+  <footer class="py-3 mt-auto" style="background-color: #2c3e50;">
+    <div class="container">
+      <div class="row align-items-center">
+        <div class="col-md-4 text-center text-md-start mb-2 mb-md-0">
+          <img src="{{ asset('images/logo text.png') }}" alt="EcoWatch" height="30">
+        </div>
+        <div class="col-md-4 text-center mb-2 mb-md-0">
+          <p class="mb-0 small text-white-50">Protecting our environment together</p>
+        </div>
+        <div class="col-md-4 text-center text-md-end">
+          <p class="mb-0 small text-white-50">&copy; {{ date('Y') }} EcoWatch</p>
+        </div>
+      </div>
     </div>
   </footer>
 

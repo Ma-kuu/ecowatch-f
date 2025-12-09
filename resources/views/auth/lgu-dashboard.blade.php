@@ -118,14 +118,14 @@
             <i class="bi bi-pie-chart me-2 text-primary"></i>Reports by Category
           </h6>
         </div>
-        <div class="card-body">
-          <canvas id="lguCategoryChart" height="250"></canvas>
+        <div class="card-body d-flex align-items-center justify-content-center">
+          <canvas id="lguCategoryChart" style="max-height: 200px;"></canvas>
         </div>
       </div>
     </div>
 
     <!-- Status Distribution Chart -->
-    <div class="col-lg-8">
+    <div class="col-lg-4">
       <div class="card border-0 shadow-sm h-100">
         <div class="card-header bg-white border-bottom">
           <h6 class="mb-0 fw-bold">
@@ -133,7 +133,21 @@
           </h6>
         </div>
         <div class="card-body">
-          <canvas id="lguStatusChart" height="250"></canvas>
+          <canvas id="lguStatusChart" style="max-height: 200px;"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- Monthly Trend Chart -->
+    <div class="col-lg-4">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-header bg-white border-bottom">
+          <h6 class="mb-0 fw-bold">
+            <i class="bi bi-graph-up me-2 text-info"></i>Monthly Trend
+          </h6>
+        </div>
+        <div class="card-body">
+          <canvas id="lguTrendChart" style="max-height: 200px;"></canvas>
         </div>
       </div>
     </div>
@@ -264,7 +278,7 @@
 
   <!-- Mark as Fixed Modal -->
   <div class="modal fade" id="markFixedModal" tabindex="-1" aria-labelledby="markFixedModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
       <div class="modal-content">
         <div class="modal-header" style="background-color: #e9f7ef; border-bottom: 2px solid #198754;">
           <h5 class="modal-title fw-bold" id="markFixedModalLabel" style="color: #198754;">
@@ -274,7 +288,7 @@
         </div>
         <form id="markFixedForm" method="POST" action="#" enctype="multipart/form-data">
           @csrf
-          <div class="modal-body">
+          <div class="modal-body" style="max-height: 60vh; overflow-y: auto;">
             <!-- Report ID Display -->
             <div class="alert alert-info">
               <small><i class="bi bi-info-circle"></i> You are marking this report as fixed. Please provide proof and details of actions taken.</small>
@@ -307,7 +321,7 @@
               <div class="form-text">Optional: List the team members or units involved</div>
             </div>
           </div>
-          <div class="modal-footer">
+          <div class="modal-footer bg-light border-top d-flex justify-content-end align-items-center gap-2">
             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
             <button type="button" class="btn btn-info" id="markBeingAddressedBtn">
               <i class="bi bi-tools"></i> Mark as Being Addressed
@@ -370,14 +384,16 @@
               </label>
             </div>
           </div>
-          <div class="modal-footer">
-            <a href="{{ route('lgu.announcements.index') }}" class="btn btn-outline-info me-auto">
+          <div class="modal-footer bg-light border-top d-flex justify-content-between align-items-center">
+            <a href="{{ route('lgu.announcements.index') }}" class="btn btn-outline-info">
               <i class="bi bi-list-ul"></i> View My Announcements
             </a>
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-            <button type="submit" class="btn btn-primary">
-              <i class="bi bi-send"></i> Publish Announcement
-            </button>
+            <div class="d-flex gap-2">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+              <button type="submit" class="btn btn-primary">
+                <i class="bi bi-send"></i> Publish Announcement
+              </button>
+            </div>
           </div>
         </form>
       </div>
@@ -428,7 +444,7 @@
               </label>
             </div>
           </div>
-          <div class="modal-footer">
+          <div class="modal-footer bg-light border-top d-flex justify-content-end align-items-center gap-2">
             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
             <button type="submit" class="btn btn-primary">
               <i class="bi bi-save"></i> Update Announcement
@@ -502,7 +518,7 @@ document.addEventListener('DOMContentLoaded', function() {
   }
   @endif
 
-  // LGU Status Chart (Bar)
+  // LGU Status Chart (Horizontal Bar)
   const lguStatusCtx = document.getElementById('lguStatusChart');
   if (lguStatusCtx) {
     const ctx2 = lguStatusCtx.getContext('2d');
@@ -518,21 +534,87 @@ document.addEventListener('DOMContentLoaded', function() {
             {{ $fixedAssigned ?? 0 }},
             {{ $verifiedAssigned ?? 0 }}
           ],
-        backgroundColor: ['#ffc107', '#0d6efd', '#6c757d', '#198754'],
-        borderRadius: 6
-      }]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: { display: false }
+          backgroundColor: ['#ffc107', '#0d6efd', '#6c757d', '#198754'],
+          borderRadius: 4,
+          barThickness: 30
+        }]
       },
-      scales: {
-        y: { beginAtZero: true, ticks: { stepSize: 1 } }
+      options: {
+        indexAxis: 'y',
+        responsive: true,
+        maintainAspectRatio: true,
+        aspectRatio: 1.5,
+        plugins: {
+          legend: { display: false }
+        },
+        scales: {
+          x: { 
+            beginAtZero: true, 
+            ticks: { stepSize: 1 },
+            grid: { display: true }
+          },
+          y: {
+            grid: { display: false }
+          }
+        }
       }
-    }
-  });
+    });
+  }
+
+  // LGU Monthly Trend Chart (Line)
+  const lguTrendCtx = document.getElementById('lguTrendChart');
+  if (lguTrendCtx) {
+    const ctx3 = lguTrendCtx.getContext('2d');
+    // Get actual monthly data from controller
+    const months = @json($monthLabels ?? []);
+    const trendData = @json($monthlyTrend ?? []);
+    
+    new Chart(ctx3, {
+      type: 'line',
+      data: {
+        labels: months,
+        datasets: [{
+          label: 'Reports',
+          data: trendData,
+          borderColor: '#17a2b8',
+          backgroundColor: 'rgba(23, 162, 184, 0.1)',
+          tension: 0.4,
+          fill: true,
+          pointRadius: 4,
+          pointHoverRadius: 6,
+          pointBackgroundColor: '#17a2b8',
+          pointBorderColor: '#fff',
+          pointBorderWidth: 2
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        aspectRatio: 1.5,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                return 'Reports: ' + context.parsed.y;
+              }
+            }
+          }
+        },
+        scales: {
+          y: { 
+            beginAtZero: true,
+            ticks: { 
+              stepSize: 1,
+              precision: 0
+            }
+          },
+          x: {
+            grid: { display: false }
+          }
+        }
+      }
+    });
   }
 
   // =============================================================================
@@ -782,7 +864,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // Handle "Mark as Being Addressed" button
   document.getElementById('markBeingAddressedBtn').addEventListener('click', function() {
-    const reportId = document.getElementById('markFixedForm').action.split('/').pop();
+    // Extract report ID from form action URL (format: /lgu/reports/{id}/mark-fixed)
+    const actionParts = document.getElementById('markFixedForm').action.split('/');
+    const reportId = actionParts[actionParts.length - 2]; // Get second-to-last part (the ID)
     
     if (confirm('Mark this report as "Being Addressed"? This will update the status to In Progress.')) {
       // Create a simple form to submit

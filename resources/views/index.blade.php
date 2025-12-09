@@ -1,6 +1,16 @@
 @extends('layouts.app')
 
-@section('title', 'EcoWatch - Report Environmental Violations')
+@section('title', 'EcoWatch — Home')
+
+@push('styles')
+<style>
+  .map-lightbox-overlay,
+  .map-lightbox-container,
+  .map-lightbox-close {
+    display: none !important;
+  }
+</style>
+@endpush
 
 @section('content')
   <!-- Hero Section -->

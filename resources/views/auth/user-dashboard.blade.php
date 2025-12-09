@@ -167,7 +167,19 @@
                 <button class="btn btn-sm btn-outline-primary" 
                         data-bs-toggle="modal" 
                         data-bs-target="#reportDetailsModal"
-                        data-report-id="{{ $report->id }}">
+                        data-report-id="{{ $report->id }}"
+                        data-report-code="{{ $report->report_id }}"
+                        data-lat="{{ $report->latitude }}"
+                        data-lng="{{ $report->longitude }}"
+                        data-description="{{ $report->description }}"
+                        data-violation="{{ $report->violationType->name ?? 'N/A' }}"
+                        data-location="{{ $report->location }}"
+                        data-created="{{ $report->created_at->format('M d, Y') }}"
+                        data-status="{{ $report->status_display }}"
+                        data-status-raw="{{ $report->status }}"
+                        data-photo="{{ $report->primary_photo_url ?? '' }}"
+                        data-remarks="{{ $report->validity?->notes ?? 'No remarks yet.' }}"
+                        data-proof-photos='@json($report->photos->where("is_primary", false)->map(fn($p) => asset("storage/" . $p->file_path))->values())'>
                   <i class="bi bi-eye"></i> View
                 </button>
               </td>
@@ -286,34 +298,64 @@
       document.getElementById('modalStatus').textContent = status;
       document.getElementById('modalRemarks').textContent = remarks;
 
-      // Handle photo evidence
+      // Handle photo evidence (primary photo)
       const photoElement = document.getElementById('modalPhotoEvidence');
-      const photoSection = photoElement.closest('.col-12');
+      const photoSection = document.getElementById('photoEvidenceSection');
       if (photo && photo.trim() !== '') {
         photoElement.src = photo;
-        photoElement.style.display = 'block';
+        photoElement.onclick = function() {
+          window.open(photo, '_blank');
+        };
         photoSection.style.display = 'block';
       } else {
-        photoElement.style.display = 'none';
         photoSection.style.display = 'none';
       }
 
-      // Handle resolution proof photo
-      const resolutionProofElement = document.getElementById('modalResolutionProof');
-      const resolutionProofSection = resolutionProofElement.closest('.col-12');
-      if (resolutionProof && resolutionProof.trim() !== '') {
-        resolutionProofElement.src = resolutionProof;
-        resolutionProofElement.style.display = 'block';
-        resolutionProofSection.style.display = 'block';
-      } else {
-        resolutionProofElement.style.display = 'none';
+      // Handle resolution proof photos (LGU uploaded)
+      const proofPhotosJson = this.dataset.proofPhotos;
+      const proofPhotosContainer = document.getElementById('modalResolutionProofContainer');
+      const resolutionProofSection = document.getElementById('resolutionProofSection');
+      
+      try {
+        const proofPhotos = JSON.parse(proofPhotosJson || '[]');
+        
+        if (proofPhotos.length > 0) {
+          // Clear container
+          proofPhotosContainer.innerHTML = '';
+          
+          // Add each proof photo
+          proofPhotos.forEach((photoUrl, index) => {
+            const imgWrapper = document.createElement('div');
+            imgWrapper.className = 'position-relative';
+            imgWrapper.style.cssText = 'width: 150px; height: 150px;';
+            
+            const img = document.createElement('img');
+            img.src = photoUrl;
+            img.alt = `Proof Photo ${index + 1}`;
+            img.className = 'img-fluid rounded shadow-sm';
+            img.style.cssText = 'width: 100%; height: 100%; object-fit: cover; cursor: pointer;';
+            img.onclick = function() {
+              window.open(photoUrl, '_blank');
+            };
+            
+            imgWrapper.appendChild(img);
+            proofPhotosContainer.appendChild(imgWrapper);
+          });
+          
+          resolutionProofSection.style.display = 'block';
+        } else {
+          resolutionProofSection.style.display = 'none';
+        }
+      } catch (e) {
+        console.error('Error parsing proof photos:', e);
         resolutionProofSection.style.display = 'none';
       }
 
       // Show/hide confirmation buttons based on status
+      // Only show for awaiting-confirmation, hide for resolved or other statuses
       const confirmationButtons = document.getElementById('confirmationButtons');
       if (statusRaw === 'awaiting-confirmation') {
-        confirmationButtons.style.display = 'block';
+        confirmationButtons.style.display = 'flex';
       } else {
         confirmationButtons.style.display = 'none';
       }

@@ -16,7 +16,7 @@ class ReportStatusController extends Controller
     }
 
     /**
-     * Look up a report by tracking code.
+     * Look up a report by Report ID (anonymous reports only).
      */
     public function lookup(Request $request)
     {
@@ -26,12 +26,15 @@ class ReportStatusController extends Controller
 
         $trackingCode = strtoupper(trim($request->tracking_code));
 
-        $report = Report::where('report_id', $trackingCode)
+        // Only find anonymous reports (is_anonymous = true)
+        // This prevents authenticated user reports from being viewed via this page
+        $report = Report::whereRaw('UPPER(report_id) = ?', [$trackingCode])
+            ->where('is_anonymous', true)
             ->with(['barangay.lgu', 'violationType'])
             ->first();
 
         if (!$report) {
-            return back()->with('error', 'Report not found. Please check your tracking code and try again.');
+            return back()->with('error', 'Report not found. Please check your Report ID and try again. Note: Only anonymous reports can be tracked here.');
         }
 
         return view('report-status', compact('report'));

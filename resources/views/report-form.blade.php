@@ -2,6 +2,16 @@
 
 @section('title', 'Ready to Report? - EcoWatch')
 
+@push('styles')
+<style>
+  .map-lightbox-overlay,
+  .map-lightbox-container,
+  .map-lightbox-close {
+    display: none !important;
+  }
+</style>
+@endpush
+
 @section('content')
   <!-- Hero Section -->
   <section class="py-5 bg-light text-center" style="margin-top: 56px; padding-top: 4rem !important;">
@@ -26,7 +36,7 @@
                 <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>No account required</li>
                 <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>Complete anonymity</li>
                 <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>Quick submission</li>
-                <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>Secure & encrypted</li>
+                <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>Secure & protected</li>
               </ul>
               <a href="{{ route('report-anon') }}" class="btn btn-success btn-lg w-100">Report Anonymously</a>
             </div>
