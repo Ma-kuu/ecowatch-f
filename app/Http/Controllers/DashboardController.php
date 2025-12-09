@@ -83,7 +83,8 @@ class DashboardController extends Controller
     public function adminDashboard(Request $request)
     {
         // Get base query with relationships
-        $query = Report::with(['reporter', 'violationType', 'barangay.lgu', 'assignedLgu', 'validity', 'photos']);
+        $query = Report::with(['reporter', 'violationType', 'barangay.lgu', 'assignedLgu', 'validity', 'photos'])
+            ->withCount('flags');
 
         // Apply search filter
         if ($search = $request->input('search')) {

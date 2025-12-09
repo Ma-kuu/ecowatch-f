@@ -37,11 +37,6 @@ class PublicFeedController extends Controller
                         $q->where('user_id', auth()->id());
                     }
                 },
-                'downvotes' => function ($q) {
-                    if (auth()->check()) {
-                        $q->where('user_id', auth()->id());
-                    }
-                },
             ])
             ->public()
             ->where('is_hidden', false)
@@ -182,34 +177,57 @@ class PublicFeedController extends Controller
     }
 
     /**
-     * Toggle downvote for a report.
+     * Flag a report as inappropriate.
      */
-    public function toggleDownvote(Request $request, Report $report)
+    public function flagReport(Request $request, Report $report)
     {
+        // Must be logged in
+        if (!auth()->check()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You must be logged in to report posts.',
+            ], 401);
+        }
+
         // Check if report is public
         if (!$report->is_public) {
             return response()->json([
                 'success' => false,
-                'message' => 'This report is not available for voting.',
+                'message' => 'This report is not available.',
             ], 403);
         }
 
         $user = auth()->user();
-        $ipAddress = $request->ip();
 
         try {
-            $downvoted = \App\Models\ReportDownvote::toggle($report, $user, $ipAddress);
+            // Check if already flagged
+            $existingFlag = \App\Models\ReportFlag::where('report_id', $report->id)
+                ->where('user_id', $user->id)
+                ->first();
+
+            if ($existingFlag) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'You have already reported this post.',
+                ]);
+            }
+
+            // Create flag
+            \App\Models\ReportFlag::create([
+                'report_id' => $report->id,
+                'user_id' => $user->id,
+                'reason' => 'Inappropriate content',
+                'created_at' => now(),
+            ]);
 
             return response()->json([
                 'success' => true,
-                'downvoted' => $downvoted,
-                'downvotes_count' => $report->fresh()->downvotes_count,
-                'is_hidden' => $report->fresh()->is_hidden,
+                'message' => 'Report flagged successfully.',
             ]);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to toggle downvote. Please try again.',
+                'message' => 'Failed to flag report. Please try again.',
             ], 500);
         }
     }

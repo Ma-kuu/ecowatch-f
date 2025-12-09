@@ -199,6 +199,11 @@
               <td class="py-3">{{ $report->location }}</td>
               <td class="py-3">
                 <span class="badge bg-{{ $report->status_color }}">{{ $report->status_display }}</span>
+                @if($report->flags_count > 0)
+                  <span class="badge bg-warning text-dark ms-1" title="{{ $report->flags_count }} user(s) reported this as inappropriate">
+                    <i class="bi bi-flag-fill"></i> Flagged ({{ $report->flags_count }})
+                  </span>
+                @endif
                 @if($report->is_hidden)
                   <span class="badge bg-danger ms-1" title="Hidden from public feed">
                     <i class="bi bi-eye-slash"></i> Hidden

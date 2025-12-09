@@ -134,11 +134,11 @@ class Report extends Model
     }
 
     /**
-     * Get the downvotes for this report.
+     * Get the flags for this report.
      */
-    public function downvotes(): HasMany
+    public function flags(): HasMany
     {
-        return $this->hasMany(ReportDownvote::class);
+        return $this->hasMany(ReportFlag::class);
     }
 
     /**

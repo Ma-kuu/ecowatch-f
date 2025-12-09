@@ -40,27 +40,22 @@
     font-size: 16px;
     margin-right: 4px;
   }
-  .downvote-btn {
-    border: 2px solid #dc3545;
+  .report-btn {
+    border: 1px solid #6c757d;
     background: white;
-    color: #dc3545;
-    padding: 4px 12px;
+    color: #6c757d;
+    padding: 4px 10px;
     border-radius: 20px;
     transition: all 0.2s;
-    font-weight: 600;
+    font-size: 12px;
     margin-left: 8px;
   }
-  .downvote-btn:hover {
-    background: #fff5f5;
-    transform: translateY(-2px);
-  }
-  .downvote-btn.downvoted {
-    background: #dc3545;
+  .report-btn:hover {
+    background: #6c757d;
     color: white;
   }
-  .downvote-btn i {
-    font-size: 16px;
-    margin-right: 4px;
+  .report-btn i {
+    font-size: 14px;
   }
 </style>
 @endpush
@@ -208,15 +203,15 @@
                         <i class="bi bi-arrow-up-circle-fill"></i>
                         <span class="upvote-count">{{ $report->upvotes_count ?? 0 }}</span>
                       </button>
-                      <button 
-                        class="btn btn-sm downvote-btn {{ auth()->check() && $report->downvotes->where('user_id', auth()->id())->isNotEmpty() ? 'downvoted' : '' }}"
-                        data-report-id="{{ $report->id }}"
-                        data-downvoted="{{ auth()->check() && $report->downvotes->where('user_id', auth()->id())->isNotEmpty() ? 'true' : 'false' }}"
-                        onclick="toggleDownvote(this)"
-                        title="Downvote this report">
-                        <i class="bi bi-arrow-down-circle-fill"></i>
-                        <span class="downvote-count">{{ $report->downvotes_count ?? 0 }}</span>
-                      </button>
+                      @auth
+                        <button 
+                          class="btn btn-sm report-btn"
+                          data-report-id="{{ $report->id }}"
+                          onclick="reportPost(this)"
+                          title="Report inappropriate content">
+                          <i class="bi bi-flag"></i> Report
+                        </button>
+                      @endauth
                     </div>
                   </div>
                 </div>
@@ -430,27 +425,19 @@
     });
   }
 
-  // Downvote toggle function
-  function toggleDownvote(button) {
+  // Report post function
+  function reportPost(button) {
     const reportId = button.dataset.reportId;
-    const isDownvoted = button.dataset.downvoted === 'true';
-    const countSpan = button.querySelector('.downvote-count');
-    const currentCount = parseInt(countSpan.textContent);
-
-    // Optimistic UI update
-    button.disabled = true;
-    if (isDownvoted) {
-      button.classList.remove('downvoted');
-      countSpan.textContent = currentCount - 1;
-      button.dataset.downvoted = 'false';
-    } else {
-      button.classList.add('downvoted');
-      countSpan.textContent = currentCount + 1;
-      button.dataset.downvoted = 'true';
+    
+    if (!confirm('Report this post as inappropriate?')) {
+      return;
     }
 
-    // Send request to server
-    fetch(`/feed/reports/${reportId}/downvote`, {
+    button.disabled = true;
+    const originalText = button.innerHTML;
+    button.innerHTML = '<i class="bi bi-hourglass-split"></i> Reporting...';
+
+    fetch(`/feed/reports/${reportId}/flag`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -460,61 +447,20 @@
     .then(response => response.json())
     .then(data => {
       if (data.success) {
-        // Update with actual count from server
-        countSpan.textContent = data.downvotes_count;
-        button.dataset.downvoted = data.downvoted ? 'true' : 'false';
-        if (data.downvoted) {
-          button.classList.add('downvoted');
-        } else {
-          button.classList.remove('downvoted');
-        }
-        
-        // If report was hidden, remove it from view
-        if (data.is_hidden) {
-          const reportCard = button.closest('.col-12');
-          if (reportCard) {
-            reportCard.style.transition = 'opacity 0.3s';
-            reportCard.style.opacity = '0';
-            setTimeout(() => {
-              reportCard.remove();
-              // Show message if no reports left
-              const feedContainer = document.querySelector('.col-lg-9');
-              if (!feedContainer.querySelector('.col-12')) {
-                feedContainer.innerHTML = '<div class="text-center py-5"><p class="text-muted">No reports available at the moment.</p></div>';
-              }
-            }, 300);
-          }
-        }
+        button.innerHTML = '<i class="bi bi-check-circle"></i> Reported';
+        button.classList.add('disabled');
+        alert('Thank you. This report has been flagged for admin review.');
       } else {
-        // Revert on error
-        if (isDownvoted) {
-          button.classList.add('downvoted');
-          countSpan.textContent = currentCount;
-          button.dataset.downvoted = 'true';
-        } else {
-          button.classList.remove('downvoted');
-          countSpan.textContent = currentCount;
-          button.dataset.downvoted = 'false';
-        }
-        alert(data.message || 'Failed to toggle downvote');
+        button.innerHTML = originalText;
+        button.disabled = false;
+        alert(data.message || 'Failed to report post');
       }
     })
     .catch(error => {
-      console.error('Downvote error:', error);
-      // Revert on error
-      if (isDownvoted) {
-        button.classList.add('downvoted');
-        countSpan.textContent = currentCount;
-        button.dataset.downvoted = 'true';
-      } else {
-        button.classList.remove('downvoted');
-        countSpan.textContent = currentCount;
-        button.dataset.downvoted = 'false';
-      }
-      alert('Network error. Please try again.');
-    })
-    .finally(() => {
+      console.error('Report error:', error);
+      button.innerHTML = originalText;
       button.disabled = false;
+      alert('Network error. Please try again.');
     });
   }
 </script>

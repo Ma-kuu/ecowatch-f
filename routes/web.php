@@ -21,7 +21,7 @@ Route::get('/about', function () {
 
 Route::get('/feed', [PublicFeedController::class, 'index'])->name('feed');
 Route::post('/feed/reports/{report}/upvote', [PublicFeedController::class, 'toggleUpvote'])->name('feed.upvote');
-Route::post('/feed/reports/{report}/downvote', [PublicFeedController::class, 'toggleDownvote'])->name('feed.downvote');
+Route::post('/feed/reports/{report}/flag', [PublicFeedController::class, 'flagReport'])->name('feed.flag')->middleware('auth');
 
 // Report Pages
 Route::get('/report-form', function () {
